@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-ivory text-charcoal font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-serif;
+  }
+}
+
+@layer components {
+  /* Section label — "THE PROBLEM", "SERVICES", etc. */
+  .section-label {
+    @apply font-sans text-xs font-medium tracking-widest uppercase text-brass;
+  }
+
+  /* Brass decorative rule */
+  .brass-rule {
+    @apply block h-px bg-brass;
+  }
+
+  /* Primary CTA */
+  .btn-primary {
+    @apply inline-block font-sans text-xs font-medium tracking-widest uppercase
+           px-8 py-4 bg-charcoal text-ivory
+           border border-charcoal
+           transition-all duration-300
+           hover:bg-transparent hover:text-charcoal;
+  }
+
+  /* Outlined CTA — for dark backgrounds */
+  .btn-outline {
+    @apply inline-block font-sans text-xs font-medium tracking-widest uppercase
+           px-8 py-4 bg-transparent text-ivory
+           border border-brass
+           transition-all duration-300
+           hover:bg-brass hover:text-charcoal;
+  }
+
+  /* Brass-accent card (pain points, etc.) */
+  .accent-card {
+    @apply bg-ivory border border-stone border-l-4 border-l-brass p-6;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F9F5EE;
+}
+::-webkit-scrollbar-thumb {
+  background: #D9C9A8;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B8975A;
+}
