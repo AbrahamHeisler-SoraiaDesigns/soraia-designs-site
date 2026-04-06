@@ -19,7 +19,7 @@ export default function Hero() {
       {/* Cloudflare Stream background video */}
       <div
         className="absolute inset-0 overflow-hidden"
-        style={{ opacity: 0.35 }}
+        style={{ opacity: 0.5 }}
         aria-hidden="true"
       >
         <iframe
@@ -40,8 +40,6 @@ export default function Hero() {
           title="Hero background video"
         />
       </div>
-      {/* Dark overlay for text legibility */}
-      <div className="absolute inset-0 bg-charcoal/60" aria-hidden="true" />
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-32 pb-24">
@@ -91,7 +89,8 @@ export default function Hero() {
               href="https://calendly.com/soraia-designs"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-outline text-base px-10 py-5"
+              className="inline-block font-sans text-base font-semibold tracking-widest uppercase px-12 py-5 bg-brass text-charcoal hover:bg-ivory hover:text-charcoal transition-all duration-300"
+              style={{ boxShadow: '0 0 30px rgba(113,0,20,0.35), 0 4px 15px rgba(0,0,0,0.3)' }}
             >
               Book Your Strategy Call
             </a>
