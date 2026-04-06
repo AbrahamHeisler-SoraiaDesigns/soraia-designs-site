@@ -50,7 +50,7 @@ export default function Footer() {
               src="/assets/soraia-designs-logo-transparent.png"
               alt="Soraia Designs"
               className="w-auto mb-4"
-              style={{ filter: 'brightness(0) invert(1)', opacity: 0.85, height: 120 }}
+              style={{ filter: 'brightness(0) invert(1)', opacity: 0.85, height: 160 }}
             />
             <p className="font-sans text-stone/60 leading-relaxed" style={{ fontSize: 14 }}>
               STR interior design strategy for investors who care about returns.
