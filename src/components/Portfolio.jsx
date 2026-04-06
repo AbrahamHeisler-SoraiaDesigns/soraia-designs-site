@@ -24,6 +24,15 @@ const galleryImages = [
   { file: '42-web-or-mls-Lets%20Go%20Click-027.jpeg', alt: 'Nautical twin bedroom with coastal styling' },
 ]
 
+const properties = [
+  { name: "Let's Go — Kissimmee", location: 'Kissimmee, FL', href: '#' },
+  { name: 'The Flamingo House',   location: 'Orlando, FL',   href: '#' },
+  { name: 'Casa Palma',           location: 'Scottsdale, AZ', href: '#' },
+  { name: 'The Game Changer',     location: 'Nashville, TN',  href: '#' },
+  { name: 'Neon Nights',          location: 'Las Vegas, NV',  href: '#' },
+  { name: 'Coastal Retreat',      location: 'Destin, FL',     href: '#' },
+]
+
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   visible: (i) => ({
@@ -62,7 +71,7 @@ export default function Portfolio() {
         </motion.h2>
 
         {/* Photo grid — 3 columns, 6 rows */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-16">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-20">
           {galleryImages.map((img, i) => (
             <motion.div
               key={i}
@@ -82,6 +91,44 @@ export default function Portfolio() {
             </motion.div>
           ))}
         </div>
+
+        {/* Featured Properties */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <p className="section-label mb-8">Featured Properties</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-stone/20">
+            {properties.map((p, i) => (
+              <a
+                key={i}
+                href={p.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group bg-ivory px-8 py-7 flex items-start justify-between gap-4 hover:bg-white transition-colors duration-200"
+              >
+                <div>
+                  <p
+                    className="font-serif text-charcoal mb-1 group-hover:text-brass transition-colors duration-200"
+                    style={{ fontSize: 20, fontWeight: 500 }}
+                  >
+                    {p.name}
+                  </p>
+                  <p className="font-sans text-stone/70" style={{ fontSize: 13, letterSpacing: '0.04em' }}>
+                    {p.location}
+                  </p>
+                </div>
+                <span
+                  className="font-sans text-brass text-lg mt-0.5 flex-shrink-0 group-hover:translate-x-1 transition-transform duration-200"
+                  aria-hidden="true"
+                >
+                  →
+                </span>
+              </a>
+            ))}
+          </div>
+        </motion.div>
 
       </div>
     </section>
