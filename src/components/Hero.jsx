@@ -86,7 +86,7 @@ export default function Hero() {
             custom={0.5}
           >
             <a
-              href="https://calendly.com/soraia-designs"
+              href="https://calendly.com/abe-soraiadesigns/30min"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block font-sans text-base font-semibold tracking-widest uppercase px-12 py-5 bg-white text-charcoal hover:bg-brass hover:text-charcoal transition-all duration-300"

@@ -57,7 +57,7 @@ export default function Investment() {
           transition={{ duration: 0.4, delay: 0.4 }}
         >
           <a
-            href="https://calendly.com/soraia-designs"
+            href="https://calendly.com/abe-soraiadesigns/30min"
             target="_blank"
             rel="noopener noreferrer"
             className="btn-primary"

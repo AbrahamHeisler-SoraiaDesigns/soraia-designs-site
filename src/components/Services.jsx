@@ -14,7 +14,7 @@ const services = [
       'Scope and budget clarity',
     ],
     cta: 'Book Your Strategy Call',
-    ctaHref: 'https://calendly.com/soraia-designs',
+    ctaHref: 'https://calendly.com/abe-soraiadesigns/30min',
   },
   {
     title: 'Full STR Design Package',
@@ -28,7 +28,7 @@ const services = [
       'Procurement coordination support',
     ],
     cta: 'Get Started',
-    ctaHref: 'https://calendly.com/soraia-designs',
+    ctaHref: 'https://calendly.com/abe-soraiadesigns/30min',
   },
   {
     title: 'Procurement Support',
@@ -42,7 +42,7 @@ const services = [
       'Issue resolution and substitutions',
     ],
     cta: 'Learn More',
-    ctaHref: 'https://calendly.com/soraia-designs',
+    ctaHref: 'https://calendly.com/abe-soraiadesigns/30min',
   },
 ]
 
@@ -138,7 +138,7 @@ export default function Services() {
           transition={{ duration: 0.5, delay: 0.5 }}
         >
           <a
-            href="https://calendly.com/soraia-designs"
+            href="https://calendly.com/abe-soraiadesigns/30min"
             target="_blank"
             rel="noopener noreferrer"
             className="btn-primary"

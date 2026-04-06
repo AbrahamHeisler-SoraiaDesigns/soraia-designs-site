@@ -103,7 +103,7 @@ export default function Footer() {
               </a>
               <div className="pt-2">
                 <a
-                  href="https://calendly.com/soraia-designs"
+                  href="https://calendly.com/abe-soraiadesigns/30min"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-sans text-xs font-medium tracking-widest uppercase text-brass hover:text-ivory transition-colors duration-200"
