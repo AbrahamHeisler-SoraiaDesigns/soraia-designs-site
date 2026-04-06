@@ -24,10 +24,24 @@ const SECTIONS = [
   { id: 'final-cta',     label: 'final-cta' },
 ]
 
-async function capture(page, label, suffix = '') {
-  const filename = path.join(OUT_DIR, `${label}${suffix}.png`)
-  await page.screenshot({ path: filename, fullPage: false })
-  console.log(`  ✓ ${path.relative(__dirname, filename)}`)
+// Create a page with request interception to block external media/video
+async function newInterceptedPage(browser) {
+  const page = await browser.newPage()
+  // Register listener BEFORE enabling interception
+  page.on('request', (req) => {
+    try {
+      const type = req.resourceType()
+      const url = req.url()
+      // Block external media and large resources that cause navigation hangs
+      if ((type === 'media' || url.includes('drive.usercontent.google')) && !url.startsWith('http://localhost')) {
+        req.abort()
+      } else {
+        req.continue()
+      }
+    } catch (e) { /* ignore already-handled requests */ }
+  })
+  await page.setRequestInterception(true)
+  return page
 }
 
 async function run() {
@@ -42,9 +56,9 @@ async function run() {
   try {
     // ── Desktop 1440px full-page ──────────────────────────────────
     console.log('► Desktop (1440px) — full page')
-    const desktop = await browser.newPage()
+    const desktop = await newInterceptedPage(browser)
     await desktop.setViewport({ width: 1440, height: 900 })
-    await desktop.goto(BASE_URL, { waitUntil: 'networkidle0', timeout: 30000 })
+    await desktop.goto(BASE_URL, { waitUntil: 'load', timeout: 30000 })
     await new Promise(r => setTimeout(r, 600))
 
     // Slow scroll to trigger all useInView animations before capturing
@@ -88,9 +102,9 @@ async function run() {
 
     // ── Mobile 375px full-page ────────────────────────────────────
     console.log('\n► Mobile (375px) — full page')
-    const mobile = await browser.newPage()
+    const mobile = await newInterceptedPage(browser)
     await mobile.setViewport({ width: 375, height: 812, isMobile: true, deviceScaleFactor: 2 })
-    await mobile.goto(BASE_URL, { waitUntil: 'networkidle0', timeout: 30000 })
+    await mobile.goto(BASE_URL, { waitUntil: 'load', timeout: 30000 })
     await new Promise(r => setTimeout(r, 600))
     await mobile.evaluate(async () => {
       await new Promise(resolve => {
@@ -112,9 +126,9 @@ async function run() {
 
     // ── Tablet 768px full-page ────────────────────────────────────
     console.log('\n► Tablet (768px) — full page')
-    const tablet = await browser.newPage()
+    const tablet = await newInterceptedPage(browser)
     await tablet.setViewport({ width: 768, height: 1024 })
-    await tablet.goto(BASE_URL, { waitUntil: 'networkidle0', timeout: 30000 })
+    await tablet.goto(BASE_URL, { waitUntil: 'load', timeout: 30000 })
     await new Promise(r => setTimeout(r, 600))
     await tablet.evaluate(async () => {
       await new Promise(resolve => {

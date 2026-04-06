@@ -14,19 +14,27 @@ export default function Hero() {
     <section
       id="hero"
       className="relative min-h-screen flex items-center"
-      style={{ backgroundColor: '#2C2A27' }}
+      style={{ backgroundColor: '#161616' }}
     >
-      {/* Photo placeholder overlay */}
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ opacity: 0.4 }}
+      {/* Video background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="none"
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ opacity: 0.45 }}
+        aria-hidden="true"
       >
-        <div className="w-full h-full bg-mid-charcoal flex items-center justify-center">
-          <span className="font-sans text-sm tracking-widest uppercase text-stone/50 select-none">
-            [ PROJECT PHOTO ]
-          </span>
-        </div>
-      </div>
+        {/* TODO: For production, host video on CDN (Cloudflare R2, Bunny, Mux) instead of Google Drive */}
+        <source
+          src="https://drive.usercontent.google.com/download?id=1OFQKZwQnTAFk-aZdZw68Rly0J4Jdgt3w&export=download&confirm=t"
+          type="video/mp4"
+        />
+      </video>
+      {/* Dark overlay for text legibility */}
+      <div className="absolute inset-0 bg-charcoal/50" aria-hidden="true" />
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-32 pb-24">
@@ -47,7 +55,7 @@ export default function Hero() {
             animate="visible"
             custom={0.2}
             className="font-serif text-ivory mb-6 leading-tight"
-            style={{ fontSize: 'clamp(42px, 6vw, 76px)', fontWeight: 400 }}
+            style={{ fontSize: 'clamp(38px, 5.5vw, 72px)', fontWeight: 700 }}
           >
             STR design that helps your property compete, convert, and hold value.
           </motion.h1>

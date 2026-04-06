@@ -91,7 +91,7 @@ export default function Services() {
               animate={inView ? 'visible' : 'hidden'}
               className="bg-white border border-stone flex flex-col"
               style={{
-                borderTop: '3px solid #B8975A',
+                borderTop: '3px solid #710014',
                 boxShadow: '0 4px 20px rgba(44,42,39,0.07)',
               }}
             >

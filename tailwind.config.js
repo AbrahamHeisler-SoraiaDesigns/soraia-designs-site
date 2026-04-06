@@ -7,16 +7,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        ivory:          '#F9F5EE',
-        charcoal:       '#2C2A27',
-        brass:          '#B8975A',
-        sage:           '#8A9E8C',
-        stone:          '#D9C9A8',
-        'dark-bg':      '#1E1C19',
-        'mid-charcoal': '#3D3A35',
+        ivory:          '#F2F1ED',  // Soft Pearl
+        charcoal:       '#161616',  // Obsidian Black
+        brass:          '#710014',  // Crimson Depth (primary accent)
+        sage:           '#B38F6F',  // Warm Sand (secondary accent)
+        stone:          '#D4C8B8',  // light warm neutral
+        'dark-bg':      '#0D0D0D',  // deep black for dark sections
+        'mid-charcoal': '#2A2A2A',  // soft black for secondary text
       },
       fontFamily: {
-        serif: ['Cormorant Garamond', 'Georgia', 'serif'],
+        serif: ['Outfit', 'system-ui', 'sans-serif'],
         sans:  ['DM Sans', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {

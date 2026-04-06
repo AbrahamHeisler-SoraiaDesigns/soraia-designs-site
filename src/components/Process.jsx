@@ -34,7 +34,7 @@ export default function Process() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="process" className="py-24 px-6 lg:px-12" style={{ backgroundColor: '#1E1C19' }}>
+    <section id="process" className="py-24 px-6 lg:px-12" style={{ backgroundColor: '#0D0D0D' }}>
       <div className="max-w-7xl mx-auto" ref={ref}>
         {/* Heading */}
         <motion.h2

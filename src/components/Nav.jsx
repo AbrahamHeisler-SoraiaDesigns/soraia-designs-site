@@ -29,13 +29,13 @@ export default function Nav() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
         {/* Logo */}
-        <a href="#hero" className="flex-shrink-0">
-          <img
-            src="/assets/soraia-designs-logo.jpg"
-            alt="Soraia Designs"
-            className="h-10 w-auto"
-            style={{ minWidth: 120 }}
-          />
+        <a href="#hero" className="flex-shrink-0 flex flex-col leading-none" aria-label="Soraia Designs">
+          <span className="font-sans font-semibold text-charcoal tracking-widest uppercase text-base" style={{ letterSpacing: '0.18em' }}>
+            Soraia
+          </span>
+          <span className="font-sans font-light text-brass tracking-widest uppercase text-xs" style={{ letterSpacing: '0.22em', marginTop: 2 }}>
+            Designs
+          </span>
         </a>
 
         {/* Desktop nav links */}

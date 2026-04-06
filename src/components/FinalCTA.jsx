@@ -6,7 +6,7 @@ export default function FinalCTA() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="final-cta" className="py-32 px-6 lg:px-12" style={{ backgroundColor: '#1E1C19' }}>
+    <section id="final-cta" className="py-32 px-6 lg:px-12" style={{ backgroundColor: '#0D0D0D' }}>
       <div className="max-w-4xl mx-auto text-center" ref={ref}>
         {/* Brass rule */}
         <motion.div

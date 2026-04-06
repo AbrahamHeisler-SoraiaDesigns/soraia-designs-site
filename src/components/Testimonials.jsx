@@ -39,7 +39,7 @@ export default function Testimonials() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="testimonials" className="py-24 px-6 lg:px-12" style={{ backgroundColor: '#1E1C19' }}>
+    <section id="testimonials" className="py-24 px-6 lg:px-12" style={{ backgroundColor: '#0D0D0D' }}>
       <div className="max-w-7xl mx-auto" ref={ref}>
         {/* Heading */}
         <motion.h2
@@ -61,7 +61,7 @@ export default function Testimonials() {
               initial="hidden"
               animate={inView ? 'visible' : 'hidden'}
               className="border border-stone/20 p-8 flex flex-col gap-6"
-              style={{ backgroundColor: '#2C2A27' }}
+              style={{ backgroundColor: '#161616' }}
             >
               {/* Photo placeholder */}
               <div className="w-12 h-12 rounded-full bg-stone/20 border border-stone/30 flex items-center justify-center flex-shrink-0">
