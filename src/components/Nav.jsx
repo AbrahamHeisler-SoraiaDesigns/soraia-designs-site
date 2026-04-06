@@ -33,7 +33,7 @@ export default function Nav() {
           <img
             src="/assets/soraia-designs-logo-transparent.png"
             alt="Soraia Designs"
-            className="h-10 w-auto"
+            className="h-14 w-auto"
           />
         </a>
 
