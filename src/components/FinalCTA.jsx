@@ -51,7 +51,7 @@ export default function FinalCTA() {
             href="https://calendly.com/abe-soraiadesigns/30min"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-outline text-base px-12 py-5"
+            className="btn-primary text-base px-12 py-5"
           >
             Book Your Strategy Call
           </a>

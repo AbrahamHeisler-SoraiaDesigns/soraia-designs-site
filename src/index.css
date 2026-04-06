@@ -21,7 +21,7 @@
 @layer components {
   /* Section label — "THE PROBLEM", "SERVICES", etc. */
   .section-label {
-    @apply font-sans text-xs font-medium tracking-widest uppercase text-brass;
+    @apply font-sans text-sm font-bold tracking-widest uppercase text-brass;
   }
 
   /* Brass decorative rule */
@@ -32,10 +32,10 @@
   /* Primary CTA */
   .btn-primary {
     @apply inline-block font-sans text-xs font-medium tracking-widest uppercase
-           px-8 py-4 bg-charcoal text-ivory
-           border border-charcoal
+           px-8 py-4 bg-white text-charcoal
+           border border-white
            transition-all duration-300
-           hover:bg-transparent hover:text-charcoal;
+           hover:bg-transparent hover:text-white;
   }
 
   /* Outlined CTA — for dark backgrounds */

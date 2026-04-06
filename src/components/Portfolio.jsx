@@ -25,12 +25,42 @@ const galleryImages = [
 ]
 
 const properties = [
-  { name: "Let's Go — Kissimmee", location: 'Kissimmee, FL', href: '#' },
-  { name: 'The Flamingo House',   location: 'Orlando, FL',   href: '#' },
-  { name: 'Casa Palma',           location: 'Scottsdale, AZ', href: '#' },
-  { name: 'The Game Changer',     location: 'Nashville, TN',  href: '#' },
-  { name: 'Neon Nights',          location: 'Las Vegas, NV',  href: '#' },
-  { name: 'Coastal Retreat',      location: 'Destin, FL',     href: '#' },
+  {
+    name: "Let's Go — Kissimmee",
+    location: 'Kissimmee, FL',
+    href: '#',
+    image: `${R2}13-web-or-mls-Lets%20Go%20Click-013.jpg`,
+  },
+  {
+    name: 'The Flamingo House',
+    location: 'Orlando, FL',
+    href: '#',
+    image: `${R2}14-web-or-mls-Lets%20Go%20Click-014.jpg`,
+  },
+  {
+    name: 'Casa Palma',
+    location: 'Scottsdale, AZ',
+    href: '#',
+    image: `${R2}131-web-or-mls-Lets%20Go%20Click-054.jpeg`,
+  },
+  {
+    name: 'The Game Changer',
+    location: 'Nashville, TN',
+    href: '#',
+    image: `${R2}3-web-or-mls-Lets%20Go%20Click-066.jpeg`,
+  },
+  {
+    name: 'Neon Nights',
+    location: 'Las Vegas, NV',
+    href: '#',
+    image: `${R2}106-web-or-mls-Lets%20Go%20Click-081.jpeg`,
+  },
+  {
+    name: 'Coastal Retreat',
+    location: 'Destin, FL',
+    href: '#',
+    image: `${R2}42-web-or-mls-Lets%20Go%20Click-027.jpeg`,
+  },
 ]
 
 const fadeUp = {
@@ -99,32 +129,43 @@ export default function Portfolio() {
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <p className="section-label mb-8">Featured Properties</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-stone/20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {properties.map((p, i) => (
               <a
                 key={i}
                 href={p.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group bg-ivory px-8 py-7 flex items-start justify-between gap-4 hover:bg-white transition-colors duration-200"
+                className="group bg-white overflow-hidden hover:shadow-lg transition-shadow duration-300"
               >
-                <div>
-                  <p
-                    className="font-serif text-charcoal mb-1 group-hover:text-brass transition-colors duration-200"
-                    style={{ fontSize: 20, fontWeight: 500 }}
-                  >
-                    {p.name}
-                  </p>
-                  <p className="font-sans text-stone/70" style={{ fontSize: 13, letterSpacing: '0.04em' }}>
-                    {p.location}
-                  </p>
+                {/* Thumbnail */}
+                <div className="overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
                 </div>
-                <span
-                  className="font-sans text-brass text-lg mt-0.5 flex-shrink-0 group-hover:translate-x-1 transition-transform duration-200"
-                  aria-hidden="true"
-                >
-                  →
-                </span>
+                {/* Info bar */}
+                <div className="px-5 py-4 flex items-center justify-between gap-3 border-t border-stone/30">
+                  <div>
+                    <p
+                      className="font-serif text-charcoal group-hover:text-brass transition-colors duration-200"
+                      style={{ fontSize: 17, fontWeight: 500 }}
+                    >
+                      {p.name}
+                    </p>
+                    <p className="font-sans text-stone/70 mt-0.5" style={{ fontSize: 12, letterSpacing: '0.04em' }}>
+                      {p.location}
+                    </p>
+                  </div>
+                  <span
+                    className="font-sans text-brass text-lg flex-shrink-0 group-hover:translate-x-1 transition-transform duration-200"
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </div>
               </a>
             ))}
           </div>

@@ -84,7 +84,7 @@ export default function Strategy() {
               href="https://calendly.com/abe-soraiadesigns/30min"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-outline"
+              className="btn-primary"
             >
               Book Your Strategy Call
             </a>

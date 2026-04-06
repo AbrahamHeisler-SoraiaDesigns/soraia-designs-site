@@ -9,7 +9,7 @@ export default {
       colors: {
         ivory:          '#F2F1ED',  // Soft Pearl
         charcoal:       '#161616',  // Obsidian Black
-        brass:          '#710014',  // Crimson Depth (primary accent)
+        brass:          '#E03535',  // Vivid Red (primary accent)
         sage:           '#B38F6F',  // Warm Sand (secondary accent)
         stone:          '#D4C8B8',  // light warm neutral
         'dark-bg':      '#0D0D0D',  // deep black for dark sections
