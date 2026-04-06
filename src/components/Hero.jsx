@@ -43,7 +43,7 @@ export default function Hero() {
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-24 pb-24">
-        <div className="max-w-3xl">
+        <div className="max-w-3xl" style={{ background: 'rgba(0,0,0,0.5)', padding: '2.5rem 3rem', marginLeft: '-3rem' }}>
           {/* Brass rule */}
           <motion.span
             variants={fadeUp}
