@@ -19,9 +19,15 @@
 }
 
 @layer components {
-  /* Section label — "THE PROBLEM", "SERVICES", etc. */
+  /* Section label — light backgrounds */
   .section-label {
     @apply font-sans text-sm font-bold tracking-widest uppercase text-brass;
+  }
+
+  /* Section label — dark backgrounds */
+  .section-label-dark {
+    @apply font-sans text-sm font-bold tracking-widest uppercase;
+    color: #FF5555;
   }
 
   /* Brass decorative rule */

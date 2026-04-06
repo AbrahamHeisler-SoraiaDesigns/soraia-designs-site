@@ -18,7 +18,7 @@ export default function Strategy() {
         <div className="max-w-3xl">
           {/* Label */}
           <motion.p
-            className="section-label mb-4"
+            className="section-label-dark mb-4"
             initial={{ opacity: 0 }}
             animate={inView ? { opacity: 1 } : {}}
             transition={{ duration: 0.4 }}
