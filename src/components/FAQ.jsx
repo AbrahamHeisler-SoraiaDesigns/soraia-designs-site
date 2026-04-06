@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { AuroraBackground } from './ui/AuroraBackground'
 
 const faqs = [
   {
@@ -84,8 +85,9 @@ export default function FAQ() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="faq" className="bg-ivory py-24 px-6 lg:px-12">
-      <div className="max-w-3xl mx-auto" ref={ref}>
+    <section id="faq" className="relative bg-ivory py-24 px-6 lg:px-12">
+      <AuroraBackground showRadialGradient opacity={0.4} />
+      <div className="relative z-10 max-w-3xl mx-auto" ref={ref}>
         {/* Heading */}
         <motion.h2
           className="font-serif text-charcoal mb-16"
