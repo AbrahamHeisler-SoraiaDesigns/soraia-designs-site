@@ -35,7 +35,7 @@ export function AuroraBackground({ showRadialGradient = true, opacity = 0.5 }) {
           'absolute -inset-[10px] will-change-transform',
           // Radial fade so aurora is subtle toward the edges
           showRadialGradient
-            ? '[mask-image:radial-gradient(ellipse_at_80%_0%,black_20%,var(--transparent)_75%)]'
+            ? '[mask-image:radial-gradient(ellipse_at_70%_10%,black_40%,var(--transparent)_80%)]'
             : '',
         ].join(' ')}
       />

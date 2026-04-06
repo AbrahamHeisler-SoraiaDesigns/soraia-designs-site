@@ -86,7 +86,7 @@ export default function FAQ() {
 
   return (
     <section id="faq" className="relative bg-ivory py-24 px-6 lg:px-12">
-      <AuroraBackground showRadialGradient opacity={0.4} />
+      <AuroraBackground showRadialGradient opacity={0.75} />
       <div className="relative z-10 max-w-3xl mx-auto" ref={ref}>
         {/* Heading */}
         <motion.h2
