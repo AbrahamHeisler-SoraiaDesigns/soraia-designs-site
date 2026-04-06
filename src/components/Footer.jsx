@@ -31,10 +31,10 @@ function TikTokIcon({ className }) {
 }
 
 const socialLinks = [
-  { label: 'Instagram', href: 'https://instagram.com/soraia.designs', Icon: InstagramIcon },
-  { label: 'Facebook',  href: 'https://facebook.com/soraiadesigns',   Icon: FacebookIcon },
-  { label: 'LinkedIn',  href: 'https://linkedin.com/company/soraia-designs', Icon: LinkedInIcon },
-  { label: 'TikTok',   href: 'https://tiktok.com/@soraia.designs',    Icon: TikTokIcon },
+  { label: 'Instagram', href: 'https://www.instagram.com/soraiaheisler/',       Icon: InstagramIcon },
+  { label: 'Facebook',  href: 'https://www.facebook.com/soraia.heisler',        Icon: FacebookIcon },
+  { label: 'LinkedIn',  href: 'https://www.linkedin.com/in/soraiamalaquias/',   Icon: LinkedInIcon },
+  { label: 'TikTok',   href: 'https://www.tiktok.com/@soraiadesigns',           Icon: TikTokIcon },
 ]
 
 export default function Footer() {
@@ -93,13 +93,13 @@ export default function Footer() {
                 hello@soraiadesigns.com
               </a>
               <a
-                href="https://instagram.com/soraia.designs"
+                href="https://www.instagram.com/soraiaheisler/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-sans text-stone/60 hover:text-brass transition-colors duration-200 block"
                 style={{ fontSize: 14 }}
               >
-                @soraia.designs
+                @soraiaheisler
               </a>
               <div className="pt-2">
                 <a
