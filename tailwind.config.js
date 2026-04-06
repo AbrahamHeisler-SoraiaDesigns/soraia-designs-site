@@ -1,5 +1,3 @@
-import flattenColorPalette from 'tailwindcss/lib/util/flattenColorPalette'
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -24,25 +22,7 @@ export default {
       letterSpacing: {
         widest: '0.2em',
       },
-      animation: {
-        aurora: 'aurora 60s linear infinite',
-      },
-      keyframes: {
-        aurora: {
-          from: { backgroundPosition: '50% 50%, 50% 50%' },
-          to:   { backgroundPosition: '350% 50%, 350% 50%' },
-        },
-      },
     },
   },
-  plugins: [addVariablesForColors],
-}
-
-// Expose every Tailwind color as a CSS variable (e.g. var(--blue-500))
-function addVariablesForColors({ addBase, theme }) {
-  const allColors = flattenColorPalette(theme('colors'))
-  const vars = Object.fromEntries(
-    Object.entries(allColors).map(([key, val]) => [`--${key}`, val])
-  )
-  addBase({ ':root': vars })
+  plugins: [],
 }

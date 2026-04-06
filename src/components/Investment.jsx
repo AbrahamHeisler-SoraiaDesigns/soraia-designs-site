@@ -1,15 +1,13 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { AuroraBackground } from './ui/AuroraBackground'
 
 export default function Investment() {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="investment" className="relative bg-ivory py-24 px-6 lg:px-12">
-      <AuroraBackground showRadialGradient opacity={0.75} />
-      <div className="relative z-10 max-w-4xl mx-auto" ref={ref}>
+    <section id="investment" className="bg-ivory py-24 px-6 lg:px-12">
+      <div className="max-w-4xl mx-auto" ref={ref}>
         {/* Brass rule */}
         <motion.span
           className="brass-rule w-12 block mb-8"
