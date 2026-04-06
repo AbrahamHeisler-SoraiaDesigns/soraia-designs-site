@@ -6,8 +6,18 @@ export default function FinalCTA() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="final-cta" className="py-32 px-6 lg:px-12" style={{ backgroundColor: '#0D0D0D' }}>
-      <div className="max-w-4xl mx-auto text-center" ref={ref}>
+    <section id="final-cta" className="relative py-32 px-6 lg:px-12 overflow-hidden">
+      {/* Background photo */}
+      <div className="absolute inset-0" aria-hidden="true">
+        <img
+          src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/7-web-or-mls-Lets%20Go%20Click-008.jpg"
+          alt=""
+          className="w-full h-full object-cover object-center"
+        />
+        <div className="absolute inset-0" style={{ background: 'rgba(22,22,22,0.82)' }} />
+      </div>
+
+      <div className="relative z-10 max-w-4xl mx-auto text-center" ref={ref}>
         {/* Brass rule */}
         <motion.div
           className="flex items-center gap-6 justify-center mb-12"

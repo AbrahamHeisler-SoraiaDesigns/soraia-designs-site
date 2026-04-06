@@ -17,12 +17,14 @@ export default function About() {
             className="relative"
           >
             <div
-              className="w-full bg-stone/30 flex items-center justify-center"
+              className="w-full overflow-hidden"
               style={{ aspectRatio: '3/4', maxHeight: 560 }}
             >
-              <span className="font-sans text-sm tracking-widest uppercase text-stone select-none">
-                [ SORAIA PHOTO ]
-              </span>
+              <img
+                src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/DSC04377.jpg"
+                alt="Soraia Designs — family lifestyle shot with signature flamingo mural"
+                className="w-full h-full object-cover object-center"
+              />
             </div>
             {/* Brass accent corner */}
             <div

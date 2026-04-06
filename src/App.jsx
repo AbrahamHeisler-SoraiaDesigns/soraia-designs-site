@@ -11,6 +11,7 @@ import Portfolio from './components/Portfolio'
 import Testimonials from './components/Testimonials'
 import About from './components/About'
 import FAQ from './components/FAQ'
+import PhotoStrip from './components/PhotoStrip'
 import FinalCTA from './components/FinalCTA'
 import Footer from './components/Footer'
 
@@ -31,6 +32,7 @@ export default function App() {
         <Testimonials />
         <About />
         <FAQ />
+        <PhotoStrip />
         <FinalCTA />
       </main>
       <Footer />

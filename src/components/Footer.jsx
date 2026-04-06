@@ -8,7 +8,7 @@ export default function Footer() {
           {/* Logo + tagline */}
           <div>
             <img
-              src="/assets/soraia-designs-logo.jpg"
+              src="/assets/soraia-designs-logo-transparent.png"
               alt="Soraia Designs"
               className="h-8 w-auto mb-4"
               style={{ filter: 'brightness(0) invert(1)', opacity: 0.85 }}

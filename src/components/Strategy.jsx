@@ -14,6 +14,7 @@ export default function Strategy() {
   return (
     <section id="strategy" className="py-24 px-6 lg:px-12" style={{ backgroundColor: '#0D0D0D' }}>
       <div className="max-w-7xl mx-auto" ref={ref}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div className="max-w-3xl">
           {/* Label */}
           <motion.p
@@ -88,6 +89,29 @@ export default function Strategy() {
               Book Your Strategy Call
             </a>
           </motion.div>
+        </div>
+
+        {/* Right column — photo */}
+        <motion.div
+          className="hidden lg:block relative"
+          initial={{ opacity: 0, x: 30 }}
+          animate={inView ? { opacity: 1, x: 0 } : {}}
+          transition={{ duration: 0.7, delay: 0.3 }}
+        >
+          <div className="relative overflow-hidden" style={{ aspectRatio: '3/4' }}>
+            <img
+              src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/48-web-or-mls-Lets%20Go%20Click-055.jpg"
+              alt="Beautifully designed STR bedroom with dramatic green hedge wall"
+              className="w-full h-full object-cover"
+            />
+            {/* Brass corner accent */}
+            <div
+              className="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-brass -translate-x-4 translate-y-4"
+              aria-hidden="true"
+            />
+          </div>
+        </motion.div>
+
         </div>
       </div>
     </section>

@@ -6,8 +6,20 @@ export default function Positioning() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="positioning" className="bg-ivory py-24 px-6 lg:px-12">
-      <div className="max-w-4xl mx-auto text-center" ref={ref}>
+    <section id="positioning" className="relative py-32 px-6 lg:px-12 overflow-hidden">
+      {/* Background photo */}
+      <div className="absolute inset-0" aria-hidden="true">
+        <img
+          src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/13-web-or-mls-Lets%20Go%20Click-013.jpg"
+          alt=""
+          className="w-full h-full object-cover object-center"
+        />
+        {/* Dark gradient overlay — heavier at centre for text legibility */}
+        <div className="absolute inset-0" style={{ background: 'rgba(22,22,22,0.72)' }} />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-4xl mx-auto text-center" ref={ref}>
         {/* Top brass rule */}
         <motion.div
           className="flex items-center gap-6 justify-center mb-12"
@@ -28,7 +40,7 @@ export default function Positioning() {
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <p
-            className="font-serif italic text-charcoal leading-snug mb-8"
+            className="font-serif italic text-ivory leading-snug mb-8"
             style={{ fontSize: 'clamp(24px, 3.5vw, 44px)', fontWeight: 400 }}
           >
             "Design is not decoration. In STRs, it affects how your property photographs,
@@ -38,7 +50,7 @@ export default function Positioning() {
 
         {/* Subline */}
         <motion.p
-          className="font-sans text-mid-charcoal"
+          className="font-sans text-stone"
           style={{ fontSize: 17, fontWeight: 400 }}
           initial={{ opacity: 0, y: 10 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
