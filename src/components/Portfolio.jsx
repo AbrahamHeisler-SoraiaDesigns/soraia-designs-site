@@ -1,28 +1,27 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 
-const projects = [
-  {
-    name: 'The Retreat',
-    location: 'Scottsdale, AZ',
-    image: 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/128-web-or-mls-Lets%20Go%20Click-057.jpeg',
-    description:
-      'A two-bedroom STR repositioned for the luxury leisure market. Design strategy focused on resort-feel finishes, cohesive staging, and photography-first presentation.',
-  },
-  {
-    name: 'The Palm House',
-    location: 'Palm Springs, CA',
-    image: 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/37-web-or-mls-Lets%20Go%20Click-032.jpeg',
-    description:
-      'Vacation rental redesigned around a bold tropical concept. Full sourcing and procurement support from furniture selection to final delivery coordination.',
-  },
-  {
-    name: 'The Modern Suite',
-    location: 'Nashville, TN',
-    image: 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/48-web-or-mls-Lets%20Go%20Click-055.jpg',
-    description:
-      'Urban short-term rental optimized for couples and solo travelers. Emphasis on standout photography-ready design and high-impact guest experience touchpoints.',
-  },
+const R2 = 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/'
+
+const galleryImages = [
+  { file: '13-web-or-mls-Lets%20Go%20Click-013.jpg', alt: 'Resort pool with flamingo mural and basketball court' },
+  { file: '7-web-or-mls-Lets%20Go%20Click-008.jpg', alt: 'Twilight fire pit with colorful Adirondack chairs' },
+  { file: '14-web-or-mls-Lets%20Go%20Click-001.jpg', alt: 'Twilight basketball court with tropical art' },
+  { file: 'DSC04457.jpg', alt: 'Blue bunk room with slide and climbing wall' },
+  { file: '106-web-or-mls-Lets%20Go%20Click-081.jpeg', alt: 'Living room with neon MUSIC sign and orange sofa' },
+  { file: '14-web-or-mls-Lets%20Go%20Click-014.jpg', alt: 'Tropical flamingo bedroom with teal walls' },
+  { file: '138-web-or-mls-Lets%20Go%20Click-047.jpeg', alt: 'Pink palm tree wallpaper bedroom with green ceiling' },
+  { file: '131-web-or-mls-Lets%20Go%20Click-054.jpeg', alt: 'Dining room with palm leaf mural and teal ceiling' },
+  { file: '140-web-or-mls-Lets%20Go%20Click-045.jpeg', alt: 'Kids game room with yellow slide and arcade machines' },
+  { file: '3-web-or-mls-Lets%20Go%20Click-066.jpeg', alt: 'Game room with GAME ON neon and shuffleboard' },
+  { file: '50-web-or-mls-Lets%20Go%20Click-057.jpg', alt: 'Floral wallpaper bedroom with emerald velvet headboard' },
+  { file: '85-web-or-mls-Lets%20Go%20Click-099.jpg', alt: 'Purple UV blacklight room with ocean murals' },
+  { file: '30-web-or-mls-Lets%20Go%20Click-039.jpeg', alt: 'Navy and gold bathroom with glass shower' },
+  { file: '50-web-or-mls-Lets%20Go%20Click-019.jpeg', alt: 'Home gym with dark walls and neon accents' },
+  { file: '148-web-or-mls-Lets%20Go%20Click-030.jpeg', alt: 'Teal palm tree bedroom with striped curtains' },
+  { file: '26-web-or-mls-Lets%20Go%20Click-036.jpeg', alt: 'Orange velvet sectional living room with gold accents' },
+  { file: '139-web-or-mls-Lets%20Go%20Click-046.jpeg', alt: 'Kids playhouse bedroom with lemonade stand awning' },
+  { file: '42-web-or-mls-Lets%20Go%20Click-027.jpeg', alt: 'Nautical twin bedroom with coastal styling' },
 ]
 
 const fadeUp = {
@@ -30,7 +29,7 @@ const fadeUp = {
   visible: (i) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: i * 0.12 },
+    transition: { duration: 0.4, delay: i * 0.06 },
   }),
 }
 
@@ -62,39 +61,24 @@ export default function Portfolio() {
           Our Work
         </motion.h2>
 
-        {/* Project cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          {projects.map((project, i) => (
+        {/* Photo grid — 3 columns, 6 rows */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-16">
+          {galleryImages.map((img, i) => (
             <motion.div
               key={i}
               custom={i}
               variants={fadeUp}
               initial="hidden"
               animate={inView ? 'visible' : 'hidden'}
-              className="border border-stone bg-white overflow-hidden group"
+              className="overflow-hidden group"
+              style={{ aspectRatio: '4/3' }}
             >
-              {/* Photo */}
-              <div className="overflow-hidden" style={{ aspectRatio: '4/3' }}>
-                <img
-                  src={project.image}
-                  alt={project.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              </div>
-
-              {/* Info */}
-              <div className="p-6">
-                <p className="section-label mb-1">{project.location}</p>
-                <h3
-                  className="font-serif text-charcoal mb-3"
-                  style={{ fontSize: 22, fontWeight: 500 }}
-                >
-                  {project.name}
-                </h3>
-                <p className="font-sans text-mid-charcoal leading-relaxed" style={{ fontSize: 14 }}>
-                  {project.description}
-                </p>
-              </div>
+              <img
+                src={`${R2}${img.file}`}
+                alt={img.alt}
+                loading={i < 6 ? 'eager' : 'lazy'}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              />
             </motion.div>
           ))}
         </div>

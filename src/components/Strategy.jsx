@@ -100,8 +100,8 @@ export default function Strategy() {
         >
           <div className="relative overflow-hidden" style={{ aspectRatio: '3/4' }}>
             <img
-              src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/37-web-or-mls-Lets%20Go%20Click-032.jpeg"
-              alt="STR bedroom with tropical palm tree mural and ambient lighting"
+              src="/assets/strategy-hero.png"
+              alt="Vibrant STR bedroom with tropical palm wallpaper and Good Vibes neon signs"
               className="w-full h-full object-cover"
             />
             {/* Brass corner accent */}
