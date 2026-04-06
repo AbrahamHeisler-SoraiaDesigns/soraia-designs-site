@@ -42,7 +42,7 @@ export default function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-32 pb-24">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-24 pb-24">
         <div className="max-w-3xl">
           {/* Brass rule */}
           <motion.span
