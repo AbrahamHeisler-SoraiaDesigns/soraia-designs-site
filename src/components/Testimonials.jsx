@@ -4,24 +4,24 @@ import { motion, useInView } from 'framer-motion'
 const testimonials = [
   {
     quote:
-      "Working with Soraia Designs changed how I think about my properties. The strategy call alone gave me more clarity than six months of research.",
-    name: 'Client Name',
-    type: 'STR Investor',
-    location: 'City, State',
+      "Incredible attention to detail. Every element flows together, creating a cohesive, immersive experience from start to finish.",
+    name: 'Katie',
+    type: 'STR Owner',
+    photo: 'https://randomuser.me/api/portraits/women/44.jpg',
   },
   {
     quote:
-      "I had two properties sitting at average performance. After working through the design strategy, I had a clear roadmap and the confidence to execute it.",
-    name: 'Client Name',
-    type: 'Short-Term Rental Owner',
-    location: 'City, State',
+      "We weren't sure how bookings would go at first, but it's been nonstop — back-to-back stays and up to $20,000/month in peak season.",
+    name: 'Scott',
+    type: 'STR Investor',
+    photo: 'https://randomuser.me/api/portraits/men/32.jpg',
   },
   {
     quote:
       "The procurement coordination saved me so much time. I didn't have to manage a single vendor relationship — everything just showed up and worked.",
-    name: 'Client Name',
+    name: 'Rich',
     type: 'STR Portfolio Owner',
-    location: 'City, State',
+    photo: 'https://randomuser.me/api/portraits/men/57.jpg',
   },
 ]
 
@@ -63,9 +63,13 @@ export default function Testimonials() {
               className="border border-stone/20 p-8 flex flex-col gap-6"
               style={{ backgroundColor: '#161616' }}
             >
-              {/* Photo placeholder */}
-              <div className="w-12 h-12 rounded-full bg-stone/20 border border-stone/30 flex items-center justify-center flex-shrink-0">
-                <span className="font-sans text-xs text-stone/40 select-none">Photo</span>
+              {/* Photo */}
+              <div className="w-14 h-14 rounded-full overflow-hidden border border-stone/20 flex-shrink-0">
+                <img
+                  src={t.photo}
+                  alt={t.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               {/* Quote */}
@@ -82,9 +86,7 @@ export default function Testimonials() {
               <div className="mt-auto">
                 <span className="brass-rule w-8 block mb-4" />
                 <p className="font-sans font-medium text-ivory" style={{ fontSize: 14 }}>{t.name}</p>
-                <p className="font-sans text-stone/60" style={{ fontSize: 13 }}>
-                  {t.type} · {t.location}
-                </p>
+                <p className="font-sans text-stone/60" style={{ fontSize: 13 }}>{t.type}</p>
               </div>
             </motion.div>
           ))}
