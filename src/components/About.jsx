@@ -23,7 +23,7 @@ export default function About() {
               <img
                 src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/DSC04377.jpg"
                 alt="Soraia Designs — family lifestyle shot with signature flamingo mural"
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-right"
               />
             </div>
             {/* Brass accent corner */}
