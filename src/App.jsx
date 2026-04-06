@@ -1,5 +1,6 @@
 import Nav from './components/Nav'
 import Hero from './components/Hero'
+import Gallery from './components/Gallery'
 import PainPoints from './components/PainPoints'
 import Strategy from './components/Strategy'
 import Positioning from './components/Positioning'
@@ -19,6 +20,7 @@ export default function App() {
       <Nav />
       <main>
         <Hero />
+        <Gallery />
         <PainPoints />
         <Strategy />
         <Positioning />
