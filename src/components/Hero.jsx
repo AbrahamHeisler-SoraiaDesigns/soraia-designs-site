@@ -19,7 +19,7 @@ export default function Hero() {
       {/* Cloudflare Stream background video */}
       <div
         className="absolute inset-0 overflow-hidden"
-        style={{ opacity: 0.75 }}
+        style={{ opacity: 1 }}
         aria-hidden="true"
       >
         <iframe
