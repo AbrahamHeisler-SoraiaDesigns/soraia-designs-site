@@ -89,8 +89,8 @@ export default function Hero() {
               href="https://calendly.com/soraia-designs"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block font-sans text-base font-semibold tracking-widest uppercase px-12 py-5 bg-brass text-charcoal hover:bg-ivory hover:text-charcoal transition-all duration-300"
-              style={{ boxShadow: '0 0 30px rgba(113,0,20,0.35), 0 4px 15px rgba(0,0,0,0.3)' }}
+              className="inline-block font-sans text-base font-semibold tracking-widest uppercase px-12 py-5 bg-white text-charcoal hover:bg-brass hover:text-charcoal transition-all duration-300"
+              style={{ boxShadow: '0 0 30px rgba(255,255,255,0.25), 0 4px 15px rgba(0,0,0,0.3)' }}
             >
               Book Your Strategy Call
             </a>
