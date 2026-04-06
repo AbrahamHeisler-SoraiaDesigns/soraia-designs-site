@@ -16,25 +16,32 @@ export default function Hero() {
       className="relative min-h-screen flex items-center"
       style={{ backgroundColor: '#161616' }}
     >
-      {/* Video background */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="none"
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ opacity: 0.45 }}
+      {/* Cloudflare Stream background video */}
+      <div
+        className="absolute inset-0 overflow-hidden"
+        style={{ opacity: 0.5 }}
         aria-hidden="true"
       >
-        {/* TODO: For production, host video on CDN (Cloudflare R2, Bunny, Mux) instead of Google Drive */}
-        <source
-          src="https://drive.usercontent.google.com/download?id=1OFQKZwQnTAFk-aZdZw68Rly0J4Jdgt3w&export=download&confirm=t"
-          type="video/mp4"
+        <iframe
+          src="https://customer-msnzbycd3a1wmwkq.cloudflarestream.com/77079762a767664e31249c76a45cff14/iframe?autoplay=1&muted=1&loop=1&controls=0&background=1"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '100vw',
+            height: '56.25vw',   /* 16:9 */
+            minHeight: '100%',
+            minWidth: '177.77vh', /* 16:9 */
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+            border: 0,
+          }}
+          allow="autoplay; fullscreen; picture-in-picture"
+          title="Hero background video"
         />
-      </video>
+      </div>
       {/* Dark overlay for text legibility */}
-      <div className="absolute inset-0 bg-charcoal/50" aria-hidden="true" />
+      <div className="absolute inset-0 bg-charcoal/60" aria-hidden="true" />
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-32 pb-24">
