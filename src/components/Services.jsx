@@ -4,6 +4,7 @@ import { motion, useInView } from 'framer-motion'
 const services = [
   {
     title: 'Strategy Consultation',
+    image: 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/22-web-or-mls-Lets%20Go%20Click-064.jpeg',
     description:
       'A focused, data-driven assessment of your property and market. Includes market analysis, guest avatar definition, and amenity stack guidance — so every design decision is grounded in what actually converts.',
     bullets: [
@@ -17,6 +18,7 @@ const services = [
   },
   {
     title: 'Full STR Design Package',
+    image: 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/129-web-or-mls-Lets%20Go%20Click-056.jpeg',
     description:
       'End-to-end design direction for your property. From concept to curated sourcing list — every room planned with guest experience and investment performance in mind.',
     bullets: [
@@ -30,6 +32,7 @@ const services = [
   },
   {
     title: 'Procurement Support',
+    image: 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/102-web-or-mls-Lets%20Go%20Click-085.jpeg',
     description:
       'Add-on service for owners who want hands-off coordination. We manage vendors, track orders, and keep your project on budget so you don\'t have to.',
     bullets: [
@@ -89,12 +92,21 @@ export default function Services() {
               variants={fadeUp}
               initial="hidden"
               animate={inView ? 'visible' : 'hidden'}
-              className="bg-white border border-stone flex flex-col"
+              className="bg-white border border-stone flex flex-col overflow-hidden group"
               style={{
-                borderTop: '3px solid #710014',
                 boxShadow: '0 4px 20px rgba(44,42,39,0.07)',
               }}
             >
+              {/* Card photo */}
+              <div className="overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                <img
+                  src={service.image}
+                  alt={service.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+              {/* Brass top-accent line */}
+              <div style={{ height: 3, backgroundColor: '#710014', flexShrink: 0 }} />
               <div className="p-8 flex flex-col flex-1">
                 <h3
                   className="font-serif text-charcoal mb-4"

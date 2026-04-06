@@ -27,13 +27,14 @@ export default function Nav() {
         scrolled ? 'shadow-md' : ''
       }`}
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 h-24 flex items-center justify-between">
         {/* Logo */}
         <a href="#hero" className="flex-shrink-0" aria-label="Soraia Designs">
           <img
             src="/assets/soraia-designs-logo-transparent.png"
             alt="Soraia Designs"
-            className="h-14 w-auto"
+            className="h-20 w-auto"
+            style={{ mixBlendMode: 'multiply' }}
           />
         </a>
 

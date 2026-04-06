@@ -3,22 +3,25 @@ import { motion, useInView } from 'framer-motion'
 
 const projects = [
   {
-    name: 'Project Name',
-    location: 'City, State',
+    name: 'The Retreat',
+    location: 'Scottsdale, AZ',
+    image: 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/128-web-or-mls-Lets%20Go%20Click-057.jpeg',
     description:
-      'A two-bedroom STR property repositioned for the business traveler market. Design strategy focused on workspace functionality, durable finishes, and photography-first staging.',
+      'A two-bedroom STR repositioned for the luxury leisure market. Design strategy focused on resort-feel finishes, cohesive staging, and photography-first presentation.',
   },
   {
-    name: 'Project Name',
-    location: 'City, State',
+    name: 'The Palm House',
+    location: 'Palm Springs, CA',
+    image: 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/37-web-or-mls-Lets%20Go%20Click-032.jpeg',
     description:
-      'Lakefront cabin redesigned to appeal to group bookings. Full sourcing and procurement support, from furniture selection to final delivery coordination.',
+      'Vacation rental redesigned around a bold tropical concept. Full sourcing and procurement support from furniture selection to final delivery coordination.',
   },
   {
-    name: 'Project Name',
-    location: 'City, State',
+    name: 'The Modern Suite',
+    location: 'Nashville, TN',
+    image: 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/48-web-or-mls-Lets%20Go%20Click-055.jpg',
     description:
-      'Urban one-bedroom condo optimized for couples and solo travelers. Emphasis on guest experience touchpoints and photography-ready design throughout.',
+      'Urban short-term rental optimized for couples and solo travelers. Emphasis on standout photography-ready design and high-impact guest experience touchpoints.',
   },
 ]
 
@@ -29,19 +32,6 @@ const fadeUp = {
     y: 0,
     transition: { duration: 0.5, delay: i * 0.12 },
   }),
-}
-
-function ImagePlaceholder({ label }) {
-  return (
-    <div
-      className="w-full flex items-center justify-center bg-stone/30"
-      style={{ aspectRatio: '4/3' }}
-    >
-      <span className="font-sans text-xs tracking-widest uppercase text-stone select-none">
-        [ {label} ]
-      </span>
-    </div>
-  )
 }
 
 export default function Portfolio() {
@@ -81,12 +71,15 @@ export default function Portfolio() {
               variants={fadeUp}
               initial="hidden"
               animate={inView ? 'visible' : 'hidden'}
-              className="border border-stone bg-white"
+              className="border border-stone bg-white overflow-hidden group"
             >
-              {/* Before/After */}
-              <div className="grid grid-cols-2">
-                <ImagePlaceholder label="Before" />
-                <ImagePlaceholder label="After" />
+              {/* Photo */}
+              <div className="overflow-hidden" style={{ aspectRatio: '4/3' }}>
+                <img
+                  src={project.image}
+                  alt={project.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
               </div>
 
               {/* Info */}
