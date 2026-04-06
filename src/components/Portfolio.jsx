@@ -83,21 +83,6 @@ export default function Portfolio() {
           ))}
         </div>
 
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.4, delay: 0.5 }}
-        >
-          <a
-            href="https://calendly.com/soraia-designs"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary"
-          >
-            Book Your Strategy Call
-          </a>
-        </motion.div>
       </div>
     </section>
   )

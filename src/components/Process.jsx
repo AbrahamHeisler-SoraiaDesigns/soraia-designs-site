@@ -80,20 +80,6 @@ export default function Process() {
         </div>
 
         {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.4, delay: 0.7 }}
-        >
-          <a
-            href="https://calendly.com/soraia-designs"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-outline"
-          >
-            Book Your Strategy Call
-          </a>
-        </motion.div>
       </div>
     </section>
   )

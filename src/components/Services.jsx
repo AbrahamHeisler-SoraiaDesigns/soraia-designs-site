@@ -117,7 +117,7 @@ export default function Services() {
                 <p className="font-sans text-mid-charcoal leading-relaxed mb-6" style={{ fontSize: 15 }}>
                   {service.description}
                 </p>
-                <ul className="space-y-2 mb-8 flex-1">
+                <ul className="space-y-2 flex-1">
                   {service.bullets.map((b) => (
                     <li key={b} className="flex items-start gap-3">
                       <span className="text-brass text-sm mt-0.5 flex-shrink-0">—</span>
@@ -125,18 +125,27 @@ export default function Services() {
                     </li>
                   ))}
                 </ul>
-                <a
-                  href={service.ctaHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary text-center block"
-                >
-                  {service.cta}
-                </a>
               </div>
             </motion.div>
           ))}
         </div>
+
+        {/* Single CTA */}
+        <motion.div
+          className="mt-12 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          <a
+            href="https://calendly.com/soraia-designs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary"
+          >
+            Book Your Strategy Call
+          </a>
+        </motion.div>
       </div>
     </section>
   )

@@ -65,16 +65,6 @@ export default function About() {
               </p>
             </div>
 
-            <div className="mt-10">
-              <a
-                href="https://calendly.com/soraia-designs"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary"
-              >
-                Book Your Strategy Call
-              </a>
-            </div>
           </motion.div>
         </div>
       </div>
