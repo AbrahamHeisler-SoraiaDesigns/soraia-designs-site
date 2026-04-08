@@ -74,8 +74,8 @@ export default function Services() {
 
         {/* Heading */}
         <motion.h2
-          className="font-hand text-charcoal mb-16"
-          style={{ fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 600 }}
+          className="font-serif text-charcoal mb-16"
+          style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 400 }}
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: 0.1 }}

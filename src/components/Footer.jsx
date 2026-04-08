@@ -31,7 +31,7 @@ function TikTokIcon({ className }) {
 }
 
 const socialLinks = [
-  { label: 'Instagram', href: 'https://www.instagram.com/soraiaheisler/',       Icon: InstagramIcon },
+  { label: 'Instagram', href: 'https://www.instagram.com/soraia.designs?igsh=OGllcmU4N3dqb3Rx&utm_source=qr',       Icon: InstagramIcon },
   { label: 'Facebook',  href: 'https://www.facebook.com/soraia.heisler',        Icon: FacebookIcon },
   { label: 'LinkedIn',  href: 'https://www.linkedin.com/in/soraiamalaquias/',   Icon: LinkedInIcon },
   { label: 'TikTok',   href: 'https://www.tiktok.com/@soraiadesigns',           Icon: TikTokIcon },
@@ -93,7 +93,7 @@ export default function Footer() {
                 hello@soraiadesigns.com
               </a>
               <a
-                href="https://www.instagram.com/soraiaheisler/"
+                href="https://www.instagram.com/soraia.designs?igsh=OGllcmU4N3dqb3Rx&utm_source=qr"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-sans text-stone/60 hover:text-brass transition-colors duration-200 block"
