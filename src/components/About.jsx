@@ -6,7 +6,7 @@ export default function About() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="about" className="bg-ivory py-24 px-6 lg:px-12">
+    <section id="about" className="bg-ivory pt-24 pb-8 px-6 lg:px-12">
       <div className="max-w-7xl mx-auto" ref={ref}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Photo placeholder */}
