@@ -71,7 +71,7 @@ export default function Portfolio() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="portfolio" className="bg-ivory pt-24 pb-12 px-6 lg:px-12">
+    <section id="portfolio" className="bg-ivory pt-24 pb-4 px-6 lg:px-12">
       <div className="max-w-7xl mx-auto" ref={ref}>
         {/* Label */}
         <motion.p
