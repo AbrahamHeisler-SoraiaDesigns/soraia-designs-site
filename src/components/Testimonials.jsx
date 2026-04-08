@@ -18,7 +18,7 @@ const testimonials = [
   },
   {
     quote:
-      "The procurement coordination saved me so much time. I didn't have to manage a single vendor relationship — everything just showed up and worked.",
+      "Soraia completely transformed our Bradenton short-term rental into a standout, guest-ready space that looks incredible. She didn't forget a single detail. She understands exactly how to design for Airbnb success—stylish, functional, and built to drive bookings and 5-star experiences.",
     name: 'Rich',
     type: 'STR Portfolio Owner',
     photo: 'https://randomuser.me/api/portraits/men/57.jpg',
