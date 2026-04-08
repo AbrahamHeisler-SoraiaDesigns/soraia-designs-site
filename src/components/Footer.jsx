@@ -45,11 +45,11 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           {/* Logo + tagline */}
-          <div>
+          <div className="text-center md:text-left">
             <img
               src="/assets/soraia-designs-logo-transparent.png"
               alt="Soraia Designs"
-              className="w-auto mb-4"
+              className="w-auto mb-4 mx-auto md:mx-0"
               style={{ filter: 'invert(1)', height: 160 }}
             />
             <p className="font-sans text-stone/60 leading-relaxed" style={{ fontSize: 14 }}>
