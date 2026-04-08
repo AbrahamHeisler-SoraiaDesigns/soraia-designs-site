@@ -21,13 +21,29 @@
 @layer components {
   /* Section label — light backgrounds */
   .section-label {
-    @apply font-sans text-sm font-bold tracking-widest uppercase text-brass;
+    @apply font-sans text-sm font-bold tracking-widest uppercase text-brass inline-flex items-center gap-3;
+  }
+  .section-label::after {
+    content: '';
+    display: inline-block;
+    width: 60px;
+    height: 1px;
+    background-color: #7ab8c0;
+    vertical-align: middle;
   }
 
   /* Section label — dark backgrounds */
   .section-label-dark {
-    @apply font-sans text-sm font-bold tracking-widest uppercase;
+    @apply font-sans text-sm font-bold tracking-widest uppercase inline-flex items-center gap-3;
     color: #7ab8c0;
+  }
+  .section-label-dark::after {
+    content: '';
+    display: inline-block;
+    width: 60px;
+    height: 1px;
+    background-color: #7ab8c0;
+    vertical-align: middle;
   }
 
   /* Brass decorative rule */

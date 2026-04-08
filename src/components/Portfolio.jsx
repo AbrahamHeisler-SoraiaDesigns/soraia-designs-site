@@ -85,7 +85,7 @@ export default function Portfolio() {
 
         {/* Heading */}
         <motion.h2
-          className="font-serif text-charcoal mb-16"
+          className="font-serif text-charcoal mb-8"
           style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 400 }}
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -122,7 +122,7 @@ export default function Portfolio() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <p className="section-label mb-8">Featured Properties</p>
+          <p className="section-label mb-4">Featured Properties</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {properties.map((p, i) => (
               <a
