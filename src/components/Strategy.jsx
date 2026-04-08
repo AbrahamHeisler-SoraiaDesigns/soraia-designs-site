@@ -12,7 +12,7 @@ export default function Strategy() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="strategy" className="py-24 px-6 lg:px-12" style={{ backgroundColor: '#0D0D0D' }}>
+    <section id="strategy" className="pt-14 pb-24 px-6 lg:px-12" style={{ backgroundColor: '#0D0D0D' }}>
       <div className="max-w-7xl mx-auto" ref={ref}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div className="max-w-3xl">

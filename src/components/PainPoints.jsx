@@ -24,7 +24,7 @@ export default function PainPoints() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="pain-points" className="bg-ivory pt-12 pb-24 px-6 lg:px-12">
+    <section id="pain-points" className="bg-ivory pt-12 pb-10 px-6 lg:px-12">
       <div className="max-w-7xl mx-auto" ref={ref}>
         {/* Label */}
         <motion.p
