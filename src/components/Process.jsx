@@ -43,8 +43,8 @@ export default function Process() {
       <div className="max-w-7xl mx-auto" ref={ref}>
         {/* Heading */}
         <motion.h2
-          className="font-serif text-ivory mb-16"
-          style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 400 }}
+          className="font-hand text-ivory mb-16"
+          style={{ fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 600 }}
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: 0.1 }}

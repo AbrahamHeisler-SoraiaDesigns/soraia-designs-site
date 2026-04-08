@@ -18,6 +18,7 @@ export default {
       fontFamily: {
         serif: ['Outfit', 'system-ui', 'sans-serif'],
         sans:  ['DM Sans', 'system-ui', 'sans-serif'],
+        hand:  ['Caveat', 'cursive'],
       },
       letterSpacing: {
         widest: '0.2em',
