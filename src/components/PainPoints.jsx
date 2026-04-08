@@ -7,7 +7,7 @@ const painPoints = [
   "You picked furniture online and half of it looks wrong in the space.",
   "Your listing photos don't stand out and your booking rate shows it.",
   "You're managing 15 vendor accounts, 30 deliveries, and zero peace of mind.",
-  "You know design matters but you're making decisions based on guesswork.",
+  "You wonder if the furniture will even fit — we floor plan everything in 3D software to avoid problems before they happen.",
 ]
 
 const fadeUp = {
