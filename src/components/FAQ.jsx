@@ -84,7 +84,7 @@ export default function FAQ() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="faq" className="bg-ivory py-24 px-6 lg:px-12">
+    <section id="faq" className="bg-ivory pt-12 pb-24 px-6 lg:px-12">
       <div className="max-w-3xl mx-auto" ref={ref}>
         {/* Heading */}
         <motion.h2
