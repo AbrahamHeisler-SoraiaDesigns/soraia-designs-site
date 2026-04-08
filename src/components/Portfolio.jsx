@@ -35,25 +35,25 @@ const properties = [
     name: '5BR, HtdPool, Pickleball, FootPool',
     location: 'Bradenton, FL',
     href: 'https://www.airbnb.com/rooms/1599009949391785637',
-    image: `${R2}7-web-or-mls-Lets%20Go%20Click-008.jpg`,
+    image: `${R2}Tim.avif`,
   },
   {
     name: 'Resort-Pickle Ball, Heated Pool, Hot Tub',
     location: 'St. Petersburg, FL',
     href: 'https://www.airbnb.com/rooms/1521325880067149337',
-    image: `${R2}3-web-or-mls-Lets%20Go%20Click-066.jpeg`,
+    image: `${R2}Scott.avif`,
   },
   {
     name: 'Luxe: Heated Pool + Arcade + Game Room',
     location: 'Myrtle Beach, SC',
     href: 'https://www.airbnb.com/rooms/1596570522557413045',
-    image: `${R2}140-web-or-mls-Lets%20Go%20Click-045.jpeg`,
+    image: `${R2}Cond.avif`,
   },
   {
     name: 'NEW 5 Bed — Outdoor Oasis, Pickleball',
     location: 'Bradenton, FL',
     href: 'https://www.airbnb.com/rooms/1585582877385347819',
-    image: `${R2}14-web-or-mls-Lets%20Go%20Click-001.jpg`,
+    image: `${R2}140-web-or-mls-Lets%20Go%20Click-045.jpeg`,
   },
 ]
 
