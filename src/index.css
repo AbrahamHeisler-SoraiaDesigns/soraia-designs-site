@@ -27,7 +27,7 @@
   /* Section label — dark backgrounds */
   .section-label-dark {
     @apply font-sans text-sm font-bold tracking-widest uppercase;
-    color: #FF5555;
+    color: #7ab8c0;
   }
 
   /* Brass decorative rule */
