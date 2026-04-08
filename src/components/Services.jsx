@@ -74,7 +74,7 @@ export default function Services() {
 
         {/* Heading */}
         <motion.h2
-          className="font-serif text-charcoal mb-16"
+          className="font-serif text-charcoal mb-8"
           style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 400 }}
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}

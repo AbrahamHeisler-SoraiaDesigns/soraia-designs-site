@@ -6,7 +6,7 @@ export default function Investment() {
   const inView = useInView(ref, { once: true, margin: '-20px' })
 
   return (
-    <section id="investment" className="bg-ivory py-24 px-6 lg:px-12">
+    <section id="investment" className="bg-ivory pt-12 pb-24 px-6 lg:px-12">
       <div className="max-w-4xl mx-auto" ref={ref}>
         {/* Brass rule */}
         <motion.span
