@@ -24,6 +24,11 @@ const steps = [
   },
   {
     num: '05',
+    title: 'Professional Installation',
+    desc: "We pair you with one of our preferred installation crews to ensure every piece is properly placed and your design is brought to life exactly as envisioned.",
+  },
+  {
+    num: '06',
     title: 'Launch Ready',
     desc: "Your property is staged, photographed, and optimized for listing — ready to compete from day one.",
   },
@@ -48,7 +53,7 @@ export default function Process() {
         </motion.h2>
 
         {/* Steps — horizontal on desktop, compact stacked mobile */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-px bg-stone/10 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-stone/10 mb-16">
           {steps.map((step, i) => (
             <motion.div
               key={step.num}
