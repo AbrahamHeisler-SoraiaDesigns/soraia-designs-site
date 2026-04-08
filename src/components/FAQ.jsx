@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: 'How long does a full design project take?',
-    a: "Timeline depends on project scope, property size, and procurement complexity. We establish a clear timeline during the strategy phase so you know what to expect before we begin. Most design packages run 4–10 weeks from kickoff to delivery-ready.",
+    a: "Timeline depends on project scope, property size, and procurement complexity. We establish a clear timeline during the strategy phase so you know what to expect before we begin. Most design packages run 4–10 days on average from kickoff to delivery-ready.",
   },
   {
     q: 'Do you handle purchasing and deliveries?',
