@@ -11,7 +11,7 @@ const testimonials = [
   },
   {
     quote:
-      "We weren't sure how bookings would go at first, but it's been nonstop — back-to-back stays and up to $20,000/month in peak season.",
+      "We weren't sure how bookings would go at first, but it's been nonstop: back-to-back stays and up to $20,000/month in peak season.",
     name: 'Scott',
     type: 'STR Investor',
     photo: 'https://randomuser.me/api/portraits/men/32.jpg',
