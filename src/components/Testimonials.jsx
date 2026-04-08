@@ -18,7 +18,7 @@ const testimonials = [
   },
   {
     quote:
-      "Soraia completely transformed our Bradenton short-term rental into a standout, guest-ready space that looks incredible. She didn't forget a single detail. She understands exactly how to design for Airbnb success—stylish, functional, and built to drive bookings and 5-star experiences.",
+      "Soraia understands exactly how to design for Airbnb success—stylish, functional, and built to drive bookings and 5-star experiences.",
     name: 'Rich',
     type: 'STR Portfolio Owner',
     photo: 'https://randomuser.me/api/portraits/men/57.jpg',
