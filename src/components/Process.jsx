@@ -65,7 +65,7 @@ export default function Process() {
               {/* Number */}
               <span
                 className="font-serif mb-4 block"
-                style={{ fontSize: 40, fontWeight: 300, lineHeight: 1, color: '#FF5555' }}
+                style={{ fontSize: 40, fontWeight: 300, lineHeight: 1, color: '#7ab8c0' }}
               >
                 {step.num}
               </span>
