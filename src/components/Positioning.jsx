@@ -10,7 +10,7 @@ export default function Positioning() {
       {/* Background photo */}
       <div className="absolute inset-0" aria-hidden="true">
         <img
-          src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/13-web-or-mls-Lets%20Go%20Click-013.jpg"
+          src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/131-web-or-mls-Lets%20Go%20Click-054.jpeg"
           alt=""
           className="w-full h-full object-cover object-center"
         />
