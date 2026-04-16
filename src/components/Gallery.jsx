@@ -7,8 +7,8 @@ const images = [
     span: 'col-span-1 row-span-1',
   },
   {
-    src: `${BASE}/13-web-or-mls-Lets%20Go%20Click-013.jpg`,
-    alt: 'Pool with large tropical flamingo mural and basketball court',
+    src: `${BASE}/26-web-or-mls-Lets%20Go%20Click-036.jpeg`,
+    alt: 'Orange velvet sectional living room with gold accents',
     span: 'col-span-2 row-span-1',
   },
   {

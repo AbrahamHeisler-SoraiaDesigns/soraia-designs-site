@@ -4,7 +4,6 @@ import { motion, useInView } from 'framer-motion'
 const R2 = 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/'
 
 const galleryImages = [
-  { file: '13-web-or-mls-Lets%20Go%20Click-013.jpg', alt: 'Resort pool with flamingo mural and basketball court' },
   { file: '7-web-or-mls-Lets%20Go%20Click-008.jpg', alt: 'Twilight fire pit with colorful Adirondack chairs' },
   { file: '14-web-or-mls-Lets%20Go%20Click-001.jpg', alt: 'Twilight basketball court with tropical art' },
   { file: 'DSC04457.jpg', alt: 'Blue bunk room with slide and climbing wall' },
