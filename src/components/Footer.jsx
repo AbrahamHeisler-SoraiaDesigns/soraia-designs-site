@@ -53,7 +53,10 @@ export default function Footer() {
               style={{ filter: 'invert(1)', height: 160 }}
             />
             <p className="font-sans text-stone/60 leading-relaxed" style={{ fontSize: 14 }}>
-              STR interior design strategy for investors who care about returns.
+              Airbnb &amp; vacation rental interior design for investors who care about returns.
+            </p>
+            <p className="font-sans text-stone/40 mt-2" style={{ fontSize: 12 }}>
+              Tampa, FL &nbsp;·&nbsp; Serving Tampa Bay &amp; Beyond
             </p>
           </div>
 
@@ -146,7 +149,7 @@ export default function Footer() {
             © {year} Soraia Designs. All rights reserved.
           </p>
           <p className="font-sans text-stone/30" style={{ fontSize: 12 }}>
-            STR Interior Design Strategy
+            Short-Term Rental &amp; Airbnb Interior Design · Tampa, FL
           </p>
         </div>
       </div>

@@ -43,7 +43,7 @@ export default function Hero() {
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-32 pb-24">
-        <div className="max-w-3xl" style={{ background: 'rgba(0,0,0,0.5)', padding: '2.5rem 3rem', marginLeft: '-3rem' }}>
+        <div className="max-w-3xl mx-auto" style={{ background: 'rgba(0,0,0,0.3)', padding: '2.5rem 3rem' }}>
           {/* Brass rule */}
           <motion.span
             variants={fadeUp}
@@ -74,8 +74,8 @@ export default function Hero() {
             className="font-sans text-stone text-lg leading-relaxed mb-10 max-w-xl"
             style={{ fontWeight: 300 }}
           >
-            Soraia Designs helps STR owners and investors create more compelling,
-            guest-ready properties through design strategy, sourcing, and procurement.
+            Soraia Designs helps Airbnb and vacation rental owners create more compelling,
+            guest-ready properties through interior design strategy, sourcing, and procurement.
           </motion.p>
 
           {/* CTA */}
