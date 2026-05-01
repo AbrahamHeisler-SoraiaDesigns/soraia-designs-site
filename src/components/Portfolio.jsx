@@ -43,7 +43,7 @@ const properties = [
     image: `${R2}Scott.avif`,
   },
   {
-    name: 'Luxe: Heated Pool + Arcade + Game Room',
+    name: 'Oceanfront - 5+ Pools - Tiki Bar - Games Room',
     location: 'Myrtle Beach, SC',
     href: 'https://www.airbnb.com/rooms/1596570522557413045',
     image: `${R2}Cond.avif`,
