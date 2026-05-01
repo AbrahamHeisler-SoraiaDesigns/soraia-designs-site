@@ -3,6 +3,11 @@ import crypto from 'node:crypto'
 
 const HUBSPOT_PORTAL_ID = '245704749'
 
+function getMissingCriticalEnv() {
+  const required = ['HUBSPOT_AUDIT_FORM_GUID']
+  return required.filter((key) => !process.env[key])
+}
+
 function sha256Hex(s) {
   return crypto.createHash('sha256').update(s.trim().toLowerCase()).digest('hex')
 }
@@ -184,6 +189,16 @@ export default async function handler(req, res) {
   }
 
   const data = parsed.data
+  const missingCriticalEnv = getMissingCriticalEnv()
+  if (missingCriticalEnv.length > 0) {
+    console.error('[audit-submit] Missing critical env:', missingCriticalEnv.join(', '))
+    return res.status(503).json({
+      ok: false,
+      message: 'Audit request form is temporarily unavailable. Please email abe@soraiadesigns.com directly.',
+      code: 'FORM_MISCONFIGURED',
+    })
+  }
+
   const eventId = makeEventId(data.email, `${data.property_street} ${data.property_zip}`)
   const clientIp =
     (req.headers['x-forwarded-for']?.toString().split(',')[0] || req.socket?.remoteAddress || '').trim()

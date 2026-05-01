@@ -89,7 +89,10 @@ export default function AuditGetStarted() {
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        throw new Error(body.message || `Submit failed (${res.status})`)
+        throw new Error(
+          body.message ||
+          'Audit request form is temporarily unavailable. Please email abe@soraiadesigns.com directly.'
+        )
       }
       const result = await res.json().catch(() => ({}))
       if (typeof window !== 'undefined' && window.fbq) {
