@@ -1,39 +1,28 @@
-import Nav from './components/Nav'
-import Hero from './components/Hero'
-import Portfolio from './components/Portfolio'
-import PainPoints from './components/PainPoints'
-import Strategy from './components/Strategy'
-import Positioning from './components/Positioning'
-import Services from './components/Services'
-import Process from './components/Process'
-import Investment from './components/Investment'
-import Testimonials from './components/Testimonials'
-import About from './components/About'
-import FAQ from './components/FAQ'
-import PhotoStrip from './components/PhotoStrip'
-import FinalCTA from './components/FinalCTA'
-import Footer from './components/Footer'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import Home from './pages/Home'
+import AuditLanding from './pages/audit/Landing'
+import AuditGetStarted from './pages/audit/GetStarted'
+import AuditRequested from './pages/audit/Requested'
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
 
 export default function App() {
   return (
-    <>
-      <Nav />
-      <main>
-        <Hero />
-        <Portfolio />
-        <PainPoints />
-        <Strategy />
-        <Positioning />
-        <Services />
-        <Process />
-        <Investment />
-        <Testimonials />
-        <About />
-        <FAQ />
-        <PhotoStrip />
-        <FinalCTA />
-      </main>
-      <Footer />
-    </>
+    <BrowserRouter>
+      <ScrollToTop />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/audit" element={<AuditLanding />} />
+        <Route path="/audit/get-started" element={<AuditGetStarted />} />
+        <Route path="/audit/requested" element={<AuditRequested />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
