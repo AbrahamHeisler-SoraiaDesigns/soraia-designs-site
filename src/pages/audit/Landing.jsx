@@ -3,8 +3,21 @@ import { Link } from 'react-router-dom'
 import { motion, useInView } from 'framer-motion'
 import AuditNav from '../../components/AuditNav'
 import Footer from '../../components/Footer'
-import { featuredProperties } from '../../data/properties'
+import { featuredProperties, galleryImages, R2_BASE } from '../../data/properties'
 import { testimonials } from '../../data/testimonials'
+
+const heroImage = `${R2_BASE}131-web-or-mls-Lets%20Go%20Click-054.jpeg`
+
+const interiorGallery = [
+  { file: '138-web-or-mls-Lets%20Go%20Click-047.jpeg', alt: 'Pink palm tree wallpaper bedroom with green ceiling' },
+  { file: 'DSC04457.jpg', alt: 'Blue bunk room with slide and climbing wall' },
+  { file: '106-web-or-mls-Lets%20Go%20Click-081.jpeg', alt: 'Living room with neon MUSIC sign and orange sofa' },
+  { file: '3-web-or-mls-Lets%20Go%20Click-066.jpeg', alt: 'Game room with GAME ON neon and shuffleboard' },
+  { file: '50-web-or-mls-Lets%20Go%20Click-057.jpg', alt: 'Floral wallpaper bedroom with emerald velvet headboard' },
+  { file: '85-web-or-mls-Lets%20Go%20Click-099.jpg', alt: 'Purple UV blacklight room with ocean murals' },
+  { file: '148-web-or-mls-Lets%20Go%20Click-030.jpeg', alt: 'Teal palm tree bedroom with striped curtains' },
+  { file: '26-web-or-mls-Lets%20Go%20Click-036.jpeg', alt: 'Orange velvet sectional living room with gold accents' },
+]
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -127,6 +140,22 @@ export default function AuditLanding() {
                 >
                   What's inside
                 </a>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* HERO IMAGE — full-bleed statement shot */}
+        <section className="px-6 lg:px-12 pb-16 lg:pb-24">
+          <div className="max-w-7xl mx-auto">
+            <Reveal>
+              <div className="overflow-hidden" style={{ aspectRatio: '21/9' }}>
+                <img
+                  src={heroImage}
+                  alt="Soraia Designs interior — palm leaf mural dining room"
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                />
               </div>
             </Reveal>
           </div>
@@ -318,6 +347,45 @@ export default function AuditLanding() {
                 We don't post stats we can't source. The audit will give you ranges grounded in your actual comps — not someone else's average.
               </p>
             </Reveal>
+          </div>
+        </section>
+
+        {/* INSIDE THE WORK — interior gallery */}
+        <section className="px-6 lg:px-12 py-24 lg:py-32 bg-ivory border-t border-stone/40">
+          <div className="max-w-7xl mx-auto">
+            <Reveal>
+              <p className="section-label mb-4">Inside the work</p>
+            </Reveal>
+            <Reveal delay={1}>
+              <h2
+                className="font-serif text-charcoal mb-6"
+                style={{ fontSize: 'clamp(30px, 4vw, 48px)', fontWeight: 400 }}
+              >
+                Spaces designed for <em className="not-italic font-medium">repeat bookings</em>.
+              </h2>
+            </Reveal>
+            <Reveal delay={2}>
+              <p
+                className="font-sans text-mid-charcoal max-w-2xl leading-relaxed mb-12"
+                style={{ fontSize: 17 }}
+              >
+                A glimpse at recent interiors — every detail chosen for guest impression first, ADR second, and the photo grid third.
+              </p>
+            </Reveal>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              {interiorGallery.map((img, i) => (
+                <Reveal key={img.file} delay={i % 4}>
+                  <div className="overflow-hidden bg-stone/20" style={{ aspectRatio: '4/5' }}>
+                    <img
+                      src={`${R2_BASE}${img.file}`}
+                      alt={img.alt}
+                      loading="lazy"
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                    />
+                  </div>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </section>
 
