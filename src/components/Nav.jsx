@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { Link, useLocation } from 'react-router-dom'
 
 const navLinks = [
   { label: 'Work', href: '#portfolio' },
@@ -11,6 +12,9 @@ const navLinks = [
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
+  const onHome = location.pathname === '/'
+  const hashHref = (h) => (onHome ? h : `/${h}`)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -29,27 +33,35 @@ export default function Nav() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-12 h-32 flex items-center justify-between">
         {/* Logo */}
-        <a href="#hero" className="flex-shrink-0" aria-label="Soraia Designs">
+        <Link to="/" className="flex-shrink-0" aria-label="Soraia Designs">
           <img
             src="/assets/soraia-designs-logo-transparent.png"
             alt="Soraia Designs"
             className="w-auto"
             style={{ mixBlendMode: 'multiply', height: 128 }}
           />
-        </a>
+        </Link>
 
         {/* Desktop nav links */}
         <ul className="hidden md:flex items-center gap-10">
           {navLinks.map((link) => (
             <li key={link.label}>
               <a
-                href={link.href}
+                href={hashHref(link.href)}
                 className="font-sans text-sm font-medium text-charcoal hover:text-brass transition-colors duration-200 tracking-wide"
               >
                 {link.label}
               </a>
             </li>
           ))}
+          <li>
+            <Link
+              to="/audit"
+              className="font-sans text-sm font-medium text-brass hover:text-charcoal transition-colors duration-200 tracking-wide"
+            >
+              Free Audit
+            </Link>
+          </li>
         </ul>
 
         {/* Desktop CTA */}
@@ -81,7 +93,7 @@ export default function Nav() {
             {navLinks.map((link) => (
               <li key={link.label}>
                 <a
-                  href={link.href}
+                  href={hashHref(link.href)}
                   className="font-sans text-sm font-medium text-charcoal hover:text-brass transition-colors block py-1"
                   onClick={() => setMenuOpen(false)}
                 >
@@ -89,6 +101,15 @@ export default function Nav() {
                 </a>
               </li>
             ))}
+            <li>
+              <Link
+                to="/audit"
+                className="font-sans text-sm font-medium text-brass hover:text-charcoal transition-colors block py-1"
+                onClick={() => setMenuOpen(false)}
+              >
+                Free Audit
+              </Link>
+            </li>
             <li className="pt-2">
               <a
                 href="https://calendly.com/abe-soraiadesigns/30min"
