@@ -3,21 +3,12 @@ import { Link } from 'react-router-dom'
 import { motion, useInView } from 'framer-motion'
 import AuditNav from '../../components/AuditNav'
 import Footer from '../../components/Footer'
-import { featuredProperties, galleryImages, R2_BASE } from '../../data/properties'
+import { featuredProperties, R2_BASE } from '../../data/properties'
 import { testimonials } from '../../data/testimonials'
 
-const heroImage = `${R2_BASE}131-web-or-mls-Lets%20Go%20Click-054.jpeg`
-
-const interiorGallery = [
-  { file: '138-web-or-mls-Lets%20Go%20Click-047.jpeg', alt: 'Pink palm tree wallpaper bedroom with green ceiling' },
-  { file: 'DSC04457.jpg', alt: 'Blue bunk room with slide and climbing wall' },
-  { file: '106-web-or-mls-Lets%20Go%20Click-081.jpeg', alt: 'Living room with neon MUSIC sign and orange sofa' },
-  { file: '3-web-or-mls-Lets%20Go%20Click-066.jpeg', alt: 'Game room with GAME ON neon and shuffleboard' },
-  { file: '50-web-or-mls-Lets%20Go%20Click-057.jpg', alt: 'Floral wallpaper bedroom with emerald velvet headboard' },
-  { file: '85-web-or-mls-Lets%20Go%20Click-099.jpg', alt: 'Purple UV blacklight room with ocean murals' },
-  { file: '148-web-or-mls-Lets%20Go%20Click-030.jpeg', alt: 'Teal palm tree bedroom with striped curtains' },
-  { file: '26-web-or-mls-Lets%20Go%20Click-036.jpeg', alt: 'Orange velvet sectional living room with gold accents' },
-]
+const heroBgImage = `${R2_BASE}131-web-or-mls-Lets%20Go%20Click-054.jpeg`
+const executionBgImage = `${R2_BASE}138-web-or-mls-Lets%20Go%20Click-047.jpeg`
+const ctaBgImage = `${R2_BASE}106-web-or-mls-Lets%20Go%20Click-081.jpeg`
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -104,15 +95,30 @@ export default function AuditLanding() {
       <AuditNav />
 
       <main className="pt-20">
-        {/* HERO */}
-        <section className="px-6 lg:px-12 pt-20 pb-24 lg:pt-32 lg:pb-32">
-          <div className="max-w-5xl mx-auto">
+        {/* HERO — bg image with dark overlay */}
+        <section
+          className="relative px-6 lg:px-12 pt-32 pb-32 lg:pt-44 lg:pb-44 overflow-hidden"
+          style={{
+            backgroundImage: `url(${heroBgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          {/* Dark overlay for text legibility */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(180deg, rgba(13,13,13,0.55) 0%, rgba(13,13,13,0.70) 100%)',
+            }}
+          />
+          <div className="relative max-w-5xl mx-auto">
             <Reveal>
-              <p className="section-label mb-6">Free STR Property Audit</p>
+              <p className="section-label text-stone/80 mb-6">Free STR Property Audit</p>
             </Reveal>
             <Reveal delay={1}>
               <h1
-                className="font-serif text-charcoal mb-8"
+                className="font-serif text-ivory mb-8"
                 style={{ fontSize: 'clamp(40px, 6vw, 72px)', fontWeight: 400, lineHeight: 1.1 }}
               >
                 The audit your <em className="not-italic font-medium">property's revenue model</em> has been waiting for.
@@ -120,7 +126,7 @@ export default function AuditLanding() {
             </Reveal>
             <Reveal delay={2}>
               <p
-                className="font-sans text-mid-charcoal max-w-3xl leading-relaxed mb-10"
+                className="font-sans text-stone/90 max-w-3xl leading-relaxed mb-10"
                 style={{ fontSize: 'clamp(17px, 1.4vw, 20px)' }}
               >
                 A senior strategist reviews your listing, comps, and design through an investor's lens — and shows you exactly where your nightly rate, appraisal value, and exit premium can move. Cash flow now, appraisal lift next, exit premium long. No pitch, no template, just the report.
@@ -130,32 +136,16 @@ export default function AuditLanding() {
               <div className="flex flex-wrap gap-4 items-center">
                 <Link
                   to="/audit/get-started"
-                  className="font-sans text-xs font-medium tracking-widest uppercase px-8 py-4 bg-charcoal text-ivory hover:bg-brass transition-all duration-300"
+                  className="font-sans text-xs font-medium tracking-widest uppercase px-8 py-4 bg-ivory text-charcoal hover:bg-brass hover:text-ivory transition-all duration-300"
                 >
                   Get My Free Audit ↓
                 </Link>
                 <a
                   href="#whats-inside"
-                  className="font-sans text-xs font-medium tracking-widest uppercase px-6 py-4 text-charcoal border-b border-charcoal hover:text-brass hover:border-brass transition-all duration-300"
+                  className="font-sans text-xs font-medium tracking-widest uppercase px-6 py-4 text-ivory border-b border-ivory hover:text-brass hover:border-brass transition-all duration-300"
                 >
                   What's inside
                 </a>
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
-        {/* HERO IMAGE — full-bleed statement shot */}
-        <section className="px-6 lg:px-12 pb-16 lg:pb-24">
-          <div className="max-w-7xl mx-auto">
-            <Reveal>
-              <div className="overflow-hidden" style={{ aspectRatio: '21/9' }}>
-                <img
-                  src={heroImage}
-                  alt="Soraia Designs interior — palm leaf mural dining room"
-                  className="w-full h-full object-cover"
-                  loading="eager"
-                />
               </div>
             </Reveal>
           </div>
@@ -264,9 +254,20 @@ export default function AuditLanding() {
           </div>
         </section>
 
-        {/* AUDIT-TO-EXECUTION GAP */}
-        <section className="px-6 lg:px-12 py-24 lg:py-32" style={{ backgroundColor: '#0D0D0D' }}>
-          <div className="max-w-4xl mx-auto">
+        {/* AUDIT-TO-EXECUTION GAP — bg image with dark overlay */}
+        <section
+          className="relative px-6 lg:px-12 py-24 lg:py-32 overflow-hidden"
+          style={{
+            backgroundImage: `url(${executionBgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ backgroundColor: 'rgba(13,13,13,0.78)' }}
+          />
+          <div className="relative max-w-4xl mx-auto">
             <Reveal>
               <p className="section-label text-stone/60 mb-4">What an audit can't do</p>
             </Reveal>
@@ -347,45 +348,6 @@ export default function AuditLanding() {
                 We don't post stats we can't source. The audit will give you ranges grounded in your actual comps — not someone else's average.
               </p>
             </Reveal>
-          </div>
-        </section>
-
-        {/* INSIDE THE WORK — interior gallery */}
-        <section className="px-6 lg:px-12 py-24 lg:py-32 bg-ivory border-t border-stone/40">
-          <div className="max-w-7xl mx-auto">
-            <Reveal>
-              <p className="section-label mb-4">Inside the work</p>
-            </Reveal>
-            <Reveal delay={1}>
-              <h2
-                className="font-serif text-charcoal mb-6"
-                style={{ fontSize: 'clamp(30px, 4vw, 48px)', fontWeight: 400 }}
-              >
-                Spaces designed for <em className="not-italic font-medium">repeat bookings</em>.
-              </h2>
-            </Reveal>
-            <Reveal delay={2}>
-              <p
-                className="font-sans text-mid-charcoal max-w-2xl leading-relaxed mb-12"
-                style={{ fontSize: 17 }}
-              >
-                A glimpse at recent interiors — every detail chosen for guest impression first, ADR second, and the photo grid third.
-              </p>
-            </Reveal>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              {interiorGallery.map((img, i) => (
-                <Reveal key={img.file} delay={i % 4}>
-                  <div className="overflow-hidden bg-stone/20" style={{ aspectRatio: '4/5' }}>
-                    <img
-                      src={`${R2_BASE}${img.file}`}
-                      alt={img.alt}
-                      loading="lazy"
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
-                    />
-                  </div>
-                </Reveal>
-              ))}
-            </div>
           </div>
         </section>
 
@@ -491,15 +453,26 @@ export default function AuditLanding() {
           </div>
         </section>
 
-        {/* FINAL CTA → form page */}
-        <section className="px-6 lg:px-12 py-24 lg:py-32 bg-ivory">
-          <div className="max-w-3xl mx-auto text-center">
+        {/* FINAL CTA → form page — bg image with dark overlay */}
+        <section
+          className="relative px-6 lg:px-12 py-24 lg:py-32 overflow-hidden"
+          style={{
+            backgroundImage: `url(${ctaBgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ backgroundColor: 'rgba(13,13,13,0.72)' }}
+          />
+          <div className="relative max-w-3xl mx-auto text-center">
             <Reveal>
-              <p className="section-label mb-4">Get the audit</p>
+              <p className="section-label text-stone/80 mb-4">Get the audit</p>
             </Reveal>
             <Reveal delay={1}>
               <h2
-                className="font-serif text-charcoal mb-6"
+                className="font-serif text-ivory mb-6"
                 style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 400 }}
               >
                 Request your free <em className="not-italic font-medium">property audit</em>.
@@ -507,7 +480,7 @@ export default function AuditLanding() {
             </Reveal>
             <Reveal delay={2}>
               <p
-                className="font-sans text-mid-charcoal mb-10 leading-relaxed"
+                className="font-sans text-stone/90 mb-10 leading-relaxed"
                 style={{ fontSize: 17 }}
               >
                 Tell us about the property. We'll pull comps, audit the listing, and have your written report back inside 5 business days. Senior strategist on every audit — no auto-generated reports.
@@ -516,13 +489,13 @@ export default function AuditLanding() {
             <Reveal delay={3}>
               <Link
                 to="/audit/get-started"
-                className="inline-block font-sans text-xs font-medium tracking-widest uppercase px-10 py-4 bg-charcoal text-ivory hover:bg-brass transition-all duration-300"
+                className="inline-block font-sans text-xs font-medium tracking-widest uppercase px-10 py-4 bg-ivory text-charcoal hover:bg-brass hover:text-ivory transition-all duration-300"
               >
                 Get My Free Audit →
               </Link>
             </Reveal>
             <Reveal delay={4}>
-              <p className="mt-6 font-sans text-mid-charcoal/55" style={{ fontSize: 13 }}>
+              <p className="mt-6 font-sans text-stone/65" style={{ fontSize: 13 }}>
                 Your information is kept confidential. We never share, sell, or syndicate your property data.
               </p>
             </Reveal>
