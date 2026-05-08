@@ -151,26 +151,26 @@ export default function AuditLanding() {
           </div>
         </section>
 
-        {/* PAIN POINTS — Muted Sage band */}
-        <section className="px-6 lg:px-12 py-20" style={{ backgroundColor: '#8A9E8C' }}>
+        {/* PAIN POINTS — Charcoal band */}
+        <section className="px-6 lg:px-12 py-20 bg-charcoal">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
               {painPoints.map((p, i) => (
                 <Reveal key={p.title} delay={i}>
-                  <p className="section-label text-charcoal mb-4">0{i + 1}</p>
+                  <p className="section-label text-ivory/70 mb-4">0{i + 1}</p>
                   <h3
-                    className="font-serif text-charcoal mb-4"
+                    className="font-serif text-ivory mb-4"
                     style={{ fontSize: 'clamp(22px, 2vw, 28px)', fontWeight: 500 }}
                   >
                     {p.title}
                   </h3>
                   <p
-                    className="font-sans text-charcoal/85 leading-relaxed"
+                    className="font-sans text-ivory/85 leading-relaxed"
                     style={{ fontSize: 16 }}
                   >
                     {p.body}
                     {p.cite && (
-                      <span className="block mt-2 text-charcoal/55 italic" style={{ fontSize: 13 }}>
+                      <span className="block mt-2 text-ivory/55 italic" style={{ fontSize: 13 }}>
                         Source: {p.cite}
                       </span>
                     )}

@@ -146,14 +146,14 @@ export default function AuditGetStarted() {
                   label="Phone"
                   required
                   error={errors.phone}
-                  help="US/CA only. Format: +18135551234"
+                  help="US/CA — any format works (e.g. 813-555-1234, (813) 555 1234, 8135551234)."
                 >
                   <input
                     type="tel"
                     {...register('phone')}
                     className={inputBase}
                     autoComplete="tel"
-                    placeholder="+18135551234"
+                    placeholder="(813) 555-1234"
                   />
                 </Field>
               </fieldset>
