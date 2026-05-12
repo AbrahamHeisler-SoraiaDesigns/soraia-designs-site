@@ -80,12 +80,13 @@ export const auditFormSchema = z.object({
     }),
   phone: z
     .string()
+    .optional()
     .transform((v) => (v || '').replace(/\D/g, ''))
-    .refine((digits) => digits.length === 10 || (digits.length === 11 && digits.startsWith('1')), {
+    .refine((digits) => digits === '' || digits.length === 10 || (digits.length === 11 && digits.startsWith('1')), {
       message: 'Enter a 10-digit US/CA phone number',
     })
-    .transform((digits) => '+1' + (digits.length === 11 ? digits.slice(1) : digits))
-    .refine((e164) => /^\+1[2-9]\d{9}$/.test(e164), {
+    .transform((digits) => (digits === '' ? '' : '+1' + (digits.length === 11 ? digits.slice(1) : digits)))
+    .refine((e164) => e164 === '' || /^\+1[2-9]\d{9}$/.test(e164), {
       message: 'Phone number area code must start with 2-9',
     }),
   property_street: z.string().min(5, 'Street address required'),

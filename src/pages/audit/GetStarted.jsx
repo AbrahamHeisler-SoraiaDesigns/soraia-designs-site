@@ -144,9 +144,8 @@ export default function AuditGetStarted() {
                 </Field>
                 <Field
                   label="Phone"
-                  required
                   error={errors.phone}
-                  help="US/CA — any format works (e.g. 813-555-1234, (813) 555 1234, 8135551234)."
+                  help="Optional. US/CA — any format works (e.g. 813-555-1234, (813) 555 1234, 8135551234)."
                 >
                   <input
                     type="tel"
