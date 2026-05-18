@@ -111,19 +111,29 @@ export default function AuditGetStarted() {
 
       <main className="pt-20">
         <section className="px-6 lg:px-12 py-16 lg:py-24">
-          <div className="max-w-3xl mx-auto">
-            <p className="section-label mb-4">Get the audit</p>
-            <h1
-              className="font-serif text-charcoal mb-4"
-              style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 400 }}
-            >
-              Tell us about the <em className="not-italic font-medium">property</em>.
-            </h1>
-            <p className="font-sans text-mid-charcoal mb-12 leading-relaxed" style={{ fontSize: 17 }}>
-              Senior strategist on every audit. Written report back inside 5 business days. No follow-up pressure.
-            </p>
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] gap-12 items-start">
+            <div>
+              <p className="section-label mb-4">Get the audit</p>
+              <h1
+                className="font-serif text-charcoal mb-4"
+                style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 400 }}
+              >
+                Tell us about the <em className="not-italic font-medium">property</em>.
+              </h1>
+              <p className="font-sans text-mid-charcoal mb-8 leading-relaxed max-w-2xl" style={{ fontSize: 17 }}>
+                Senior strategist on every audit. Written report back within 48 hours.
+              </p>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-10" noValidate>
+              <div className="relative overflow-hidden border border-stone/40 bg-white/70 mb-12 lg:hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-charcoal/35 via-charcoal/10 to-transparent" />
+                <img
+                  src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/129-web-or-mls-Lets%20Go%20Click-056.jpeg"
+                  alt="Warm, elevated STR interior"
+                  className="w-full h-[240px] object-cover"
+                />
+              </div>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-10" noValidate>
               {/* Honeypot */}
               <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }}>
                 <label>Company legal name (do not fill)
@@ -282,7 +292,26 @@ export default function AuditGetStarted() {
                   Your information is kept confidential. We never share, sell, or syndicate your property data.
                 </p>
               </div>
-            </form>
+              </form>
+            </div>
+
+            <div className="hidden lg:block lg:sticky lg:top-32">
+              <div className="relative overflow-hidden border border-stone/40 bg-white/70 shadow-[0_10px_30px_rgba(44,42,39,0.08)]">
+                <div className="absolute inset-0 bg-gradient-to-t from-charcoal/45 via-charcoal/10 to-transparent" />
+                <img
+                  src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/129-web-or-mls-Lets%20Go%20Click-056.jpeg"
+                  alt="Warm, elevated STR interior"
+                  className="w-full h-[520px] object-cover"
+                />
+                <div className="absolute left-0 right-0 bottom-0 p-8 text-ivory">
+                  <p className="font-sans text-xs tracking-[0.24em] uppercase text-stone/80 mb-3">What you get</p>
+                  <h2 className="font-serif text-3xl mb-3">A written audit built for booking performance.</h2>
+                  <p className="font-sans text-sm leading-relaxed text-stone/90">
+                    We review the property, the market, and the revenue story — then send back a clear written report you can actually use.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
