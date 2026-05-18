@@ -1,28 +1,18 @@
 import crypto from 'node:crypto'
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
 import { CALENDLY_WEBHOOK_EVENT_TYPES } from './_lib/audit-config.js'
 import { upsertBrevoContact } from './_lib/brevo.js'
 import { findContactByEmail, updateContact } from './_lib/hubspot.js'
 import { isoNow } from './_lib/audit-utils.js'
 
-async function rawBody(req) {
-  if (typeof req.body === 'string') return req.body
-  if (Buffer.isBuffer(req.body)) return req.body.toString('utf8')
-  if (req.body && typeof req.body === 'object' && !req.readable) return JSON.stringify(req.body)
-
-  const chunks = []
-  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-  return Buffer.concat(chunks).toString('utf8')
+function rawBody(req) {
+  if (!req.body) return ''
+  return typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
 }
 
-function jsonBody(raw) {
-  if (!raw) return null
-  return JSON.parse(raw)
+function jsonBody(req) {
+  if (!req.body) return null
+  if (typeof req.body === 'string') return JSON.parse(req.body)
+  return req.body
 }
 
 function verifySignature(req, raw) {
@@ -132,14 +122,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, message: 'Method not allowed' })
   }
 
-  const raw = await rawBody(req)
+  const raw = rawBody(req)
   if (!verifySignature(req, raw)) {
     return res.status(401).json({ ok: false, message: 'Invalid signature' })
   }
 
   let body
   try {
-    body = jsonBody(raw)
+    body = jsonBody(req)
   } catch (error) {
     return res.status(400).json({ ok: false, message: `Invalid JSON: ${String(error)}` })
   }
