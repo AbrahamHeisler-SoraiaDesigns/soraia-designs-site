@@ -1,43 +1,45 @@
 import { auditFormSchema } from '../src/lib/audit-schema.js'
-import crypto from 'node:crypto'
-
-const HUBSPOT_PORTAL_ID = '245704749'
+import { DEFAULT_PIXEL_ID, EMAIL_KEYS, HUBSPOT_PORTAL_ID } from './_lib/audit-config.js'
+import { buildContactUrl, findContactByEmail, syncMonitoringPropsByEmail, updateContact, upsertAuditContactByEmail, upsertAuditDeal } from './_lib/hubspot.js'
+import { ensureAuditProspectDriveStructure } from './_lib/drive.js'
+import { syncLeadToBrevoAndMark } from './_lib/nurture.js'
+import { upsertBrevoAuditDeal } from './_lib/brevo.js'
+import { makeEventId, sha256Hex } from './_lib/audit-utils.js'
 
 function getMissingCriticalEnv() {
-  const required = ['HUBSPOT_AUDIT_FORM_GUID']
-  return required.filter((key) => !process.env[key])
+  if (process.env.HUBSPOT_AUDIT_FORM_GUID || process.env.HUBSPOT_SERVICE_KEY) return []
+  return ['HUBSPOT_AUDIT_FORM_GUID or HUBSPOT_SERVICE_KEY']
 }
 
-function sha256Hex(s) {
-  return crypto.createHash('sha256').update(s.trim().toLowerCase()).digest('hex')
+async function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function makeEventId(email, address) {
-  const minute = Math.floor(Date.now() / 60_000)
-  return crypto
-    .createHash('sha256')
-    .update(`${email}|${address}|${minute}`)
-    .digest('hex')
+async function withRetries(label, fn, delays = [1000, 3000, 9000]) {
+  let lastErr
+  for (let i = 0; i <= delays.length; i += 1) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastErr = err
+      if (i === delays.length) break
+      console.error(`[audit-submit] ${label} failed, retrying in ${delays[i]}ms`, err)
+      await wait(delays[i])
+    }
+  }
+  throw lastErr
 }
 
-function splitName(full) {
-  const trimmed = (full || '').trim()
-  const i = trimmed.indexOf(' ')
-  if (i < 0) return { firstname: trimmed, lastname: '' }
-  return { firstname: trimmed.slice(0, i), lastname: trimmed.slice(i + 1).trim() }
-}
-
-async function postToHubspotForm(payload, eventId) {
+async function postToHubspotForm(payload) {
   const formGuid = process.env.HUBSPOT_AUDIT_FORM_GUID
   if (!formGuid) {
     console.warn('[audit-submit] HUBSPOT_AUDIT_FORM_GUID not set — skipping HubSpot post')
     return { skipped: true, reason: 'missing_form_guid' }
   }
 
-  const { firstname, lastname } = splitName(payload.full_name)
   const fields = [
-    { name: 'firstname', value: firstname },
-    { name: 'lastname', value: lastname },
+    { name: 'firstname', value: payload.firstname },
+    { name: 'lastname', value: payload.lastname },
     { name: 'email', value: payload.email },
     { name: 'phone', value: payload.phone },
     { name: 'audit_property_street', value: payload.property_street },
@@ -70,28 +72,31 @@ async function postToHubspotForm(payload, eventId) {
     },
   }
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+  return withRetries('HubSpot Forms submit', async () => {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`HubSpot Forms API ${res.status}: ${text}`)
+    }
+    return { ok: true }
   })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`HubSpot Forms API ${res.status}: ${text}`)
-  }
-  return { ok: true, eventId }
 }
 
 async function fireMetaCAPI(payload, eventId, clientIp, userAgent) {
-  const pixelId = process.env.META_PIXEL_ID || '533276610461087'
+  const pixelId = process.env.META_PIXEL_ID || DEFAULT_PIXEL_ID
   const token = process.env.META_CAPI_ACCESS_TOKEN
   if (!token) {
     console.warn('[audit-submit] META_CAPI_ACCESS_TOKEN not set — skipping CAPI')
     return { skipped: true, reason: 'missing_token' }
   }
+  const phoneDigits = (payload.phone || '').replace(/\D/g, '')
   const userData = {
     em: [sha256Hex(payload.email)],
-    ph: [sha256Hex(payload.phone.replace(/\D/g, ''))],
+    ph: phoneDigits ? [sha256Hex(phoneDigits)] : undefined,
     client_ip_address: clientIp,
     client_user_agent: userAgent,
   }
@@ -122,7 +127,7 @@ async function fireMetaCAPI(payload, eventId, clientIp, userAgent) {
   return { ok: true }
 }
 
-async function notifyInternal(payload, eventId, contactInfo) {
+async function notifyInternal(payload, eventId, contactUrl, driveFolderUrl, dealUrl) {
   const apiKey = process.env.RESEND_API_KEY
   const to = process.env.INTERNAL_NOTIFY_EMAIL || 'abe@soraiadesigns.com'
   if (!apiKey) {
@@ -137,7 +142,9 @@ async function notifyInternal(payload, eventId, contactInfo) {
     <h2>New audit request — ${payload.full_name}</h2>
     <p>Property: ${payload.property_street}, ${payload.property_city}, ${payload.property_state} ${payload.property_zip}</p>
     <p>Event ID: ${eventId}</p>
-    ${contactInfo ? `<p>HubSpot contact: ${contactInfo}</p>` : ''}
+    ${contactUrl ? `<p><a href="${contactUrl}">Open HubSpot contact</a></p>` : ''}
+    ${dealUrl ? `<p><a href="${dealUrl}">Open HubSpot deal</a></p>` : ''}
+    ${driveFolderUrl ? `<p><a href="${driveFolderUrl}">Open Drive prospect folder</a></p>` : ''}
     <hr>
     ${lines}
   `
@@ -148,7 +155,7 @@ async function notifyInternal(payload, eventId, contactInfo) {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      from: 'Soraia Designs <audit@soraiadesigns.com>',
+      from: process.env.INTERNAL_NOTIFY_FROM || 'Soraia Designs <audit@soraiadesigns.com>',
       to: [to],
       subject: `New audit request — ${payload.full_name} (${payload.property_city}, ${payload.property_state})`,
       html,
@@ -175,7 +182,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ message: 'Invalid JSON body' })
   }
 
-  // Honeypot
   if (raw && raw._company_legal_name) {
     return res.status(200).json({ ok: true, event_id: null, honeypot: true })
   }
@@ -199,28 +205,94 @@ export default async function handler(req, res) {
     })
   }
 
+  const { firstname, lastname } = (() => {
+    const parts = String(data.full_name || '').trim().split(/\s+/)
+    return { firstname: parts[0] || '', lastname: parts.slice(1).join(' ') }
+  })()
+
+  const merged = { ...raw, ...data, firstname, lastname }
   const eventId = makeEventId(data.email, `${data.property_street} ${data.property_zip}`)
-  const clientIp =
-    (req.headers['x-forwarded-for']?.toString().split(',')[0] || req.socket?.remoteAddress || '').trim()
+  const clientIp = (req.headers['x-forwarded-for']?.toString().split(',')[0] || req.socket?.remoteAddress || '').trim()
   const userAgent = req.headers['user-agent'] || ''
 
-  const tasks = await Promise.allSettled([
-    postToHubspotForm({ ...data, ...raw }, eventId),
-    fireMetaCAPI({ ...data, ...raw }, eventId, clientIp, userAgent),
-    notifyInternal({ ...data, ...raw }, eventId, null),
-  ])
-
-  const [hubspot, capi, notify] = tasks
-  const hubspotOk = hubspot.status === 'fulfilled'
-
-  if (!hubspotOk) {
-    console.error('[audit-submit] HubSpot post failed:', hubspot.reason)
+  let hubspotSubmit
+  try {
+    hubspotSubmit = await postToHubspotForm(merged)
+  } catch (error) {
+    console.error('[audit-submit] HubSpot post failed:', error)
+    return res.status(502).json({
+      ok: false,
+      message: 'We could not save this audit request right now. Please try again in a few minutes or email abe@soraiadesigns.com.',
+      code: 'HUBSPOT_SUBMIT_FAILED',
+    })
   }
 
-  return res.status(hubspotOk ? 200 : 502).json({
-    ok: hubspotOk,
+  let contact = null
+  let contactUrl = null
+  let driveFolder = null
+  let deal = null
+  let brevoDeal = null
+  try {
+    contact = await syncMonitoringPropsByEmail(data.email, merged)
+    if (!contact && process.env.HUBSPOT_SERVICE_KEY) {
+      contact = await upsertAuditContactByEmail(merged)
+    }
+    if (!contact) {
+      contact = await findContactByEmail(data.email)
+    }
+    if (contact?.id) {
+      contactUrl = buildContactUrl(contact.id)
+      const brevoContactPayload = { ...contact, ...merged, id: contact.id }
+      await syncLeadToBrevoAndMark(brevoContactPayload, EMAIL_KEYS.EMAIL_1)
+      brevoDeal = await upsertBrevoAuditDeal(brevoContactPayload)
+    }
+  } catch (error) {
+    console.error('[audit-submit] HubSpot/Brevo sync failed:', error)
+    if (contact?.id) {
+      try {
+        await updateContact(contact.id, {
+          audit_brevo_sync_status: 'errored',
+          audit_brevo_last_sync_at: new Date().toISOString(),
+        })
+      } catch (secondary) {
+        console.error('[audit-submit] failed to mark HubSpot sync error:', secondary)
+      }
+    }
+  }
+
+  try {
+    driveFolder = await ensureAuditProspectDriveStructure(merged)
+  } catch (error) {
+    console.error('[audit-submit] Drive prospect folder setup failed:', error)
+  }
+
+  try {
+    if (contact?.id) {
+      deal = await upsertAuditDeal({
+        contactId: contact.id,
+        payload: merged,
+        driveFolderUrl: driveFolder?.url,
+        auditReportUrl: merged.audit_pdf_url || null,
+      })
+    }
+  } catch (error) {
+    console.error('[audit-submit] HubSpot deal upsert failed:', error)
+  }
+
+  const tasks = await Promise.allSettled([
+    fireMetaCAPI(merged, eventId, clientIp, userAgent),
+    notifyInternal(merged, eventId, contactUrl, driveFolder?.url, deal?.url),
+  ])
+  const [capi, notify] = tasks
+
+  return res.status(200).json({
+    ok: true,
     event_id: eventId,
-    hubspot: hubspot.status === 'fulfilled' ? hubspot.value : { error: String(hubspot.reason) },
+    hubspot: hubspotSubmit,
+    contact_url: contactUrl,
+    drive_folder_url: driveFolder?.url || null,
+    deal_url: deal?.url || null,
+    brevo_deal_id: brevoDeal?.id || null,
     capi: capi.status === 'fulfilled' ? capi.value : { error: String(capi.reason) },
     notify: notify.status === 'fulfilled' ? notify.value : { error: String(notify.reason) },
   })

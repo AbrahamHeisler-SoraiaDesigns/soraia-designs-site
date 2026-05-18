@@ -44,6 +44,14 @@ export async function updateContact(contactId, properties) {
   })
 }
 
+export async function createContact(properties) {
+  const created = await hubspotFetch('/crm/v3/objects/contacts', {
+    method: 'POST',
+    body: { properties },
+  })
+  return { id: created.id, ...created.properties }
+}
+
 export function buildContactUrl(contactId) {
   return `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL_ID}/record/0-1/${contactId}`
 }
@@ -65,6 +73,43 @@ export function monitoringPropsForSubmit(payload) {
     hubspot_owner_id: HUBSPOT_OWNER_ID,
     hs_lead_status: 'NEW_AUDIT_REQUESTED',
   }
+}
+
+export function auditContactProps(payload) {
+  return {
+    email: payload.email,
+    firstname: payload.firstname || splitName(payload.full_name).firstname,
+    lastname: payload.lastname || splitName(payload.full_name).lastname,
+    phone: payload.phone || '',
+    audit_property_street: payload.property_street || '',
+    audit_property_city: payload.property_city || '',
+    audit_property_state: payload.property_state || '',
+    audit_property_zip: payload.property_zip || '',
+    audit_property_bedrooms: payload.property_bedrooms != null ? String(payload.property_bedrooms) : '',
+    audit_property_bathrooms: payload.property_bathrooms != null ? String(payload.property_bathrooms) : '',
+    audit_is_listed: payload.is_listed || '',
+    audit_listing_url: payload.listing_url || '',
+    audit_primary_goal: payload.primary_goal || '',
+    audit_target_adr: payload.target_adr != null ? String(payload.target_adr) : '',
+    audit_current_performance: payload.current_performance || '',
+    audit_budget_tier: payload.budget_tier || '',
+    audit_timeline: payload.timeline || '',
+    audit_notes: payload.notes || '',
+    audit_referrer: payload.referrer || '',
+    audit_landing_page: payload.landing_page || '',
+    ...monitoringPropsForSubmit(payload),
+  }
+}
+
+export async function upsertAuditContactByEmail(payload) {
+  const existing = await findContactByEmail(payload.email)
+  const properties = auditContactProps(payload)
+  if (existing?.id) {
+    await updateContact(existing.id, properties)
+    return { id: existing.id, ...existing, ...properties, created: false }
+  }
+  const created = await createContact(properties)
+  return { ...created, ...properties, created: true }
 }
 
 async function wait(ms) {
