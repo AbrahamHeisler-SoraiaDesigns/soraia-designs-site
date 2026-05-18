@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import { CALENDLY_WEBHOOK_EVENT_TYPES } from './_lib/audit-config.js'
-import { upsertBrevoContact } from './_lib/brevo.js'
+import { sendResendEmail, upsertBrevoContact } from './_lib/brevo.js'
 import { findContactByEmail, updateContact } from './_lib/hubspot.js'
 import { isoNow } from './_lib/audit-utils.js'
 
@@ -76,15 +76,83 @@ function extractEventTypeLabel(payload) {
   )
 }
 
+function answers(payload) {
+  return Array.isArray(payload?.questions_and_answers) ? payload.questions_and_answers : []
+}
+
+function answerForQuestion(payload, matcher) {
+  const row = answers(payload).find((item) => matcher(String(item?.question || '').trim().toLowerCase()))
+  return String(row?.answer || '').trim()
+}
+
+function isAuditReviewEvent(eventType) {
+  return /audit review|next steps/i.test(String(eventType || ''))
+}
+
+function completedAuditAnswer(payload) {
+  return answerForQuestion(payload, (q) => q.includes('completed a soraia') || q.includes('completed the audit'))
+}
+
+function completedAuditIsNo(payload) {
+  return /^no\b/i.test(completedAuditAnswer(payload))
+}
+
+function auditEmailAnswer(payload) {
+  return answerForQuestion(payload, (q) => q.includes('what email address did you use') || q.includes('used when requesting your audit'))
+    .toLowerCase()
+}
+
+async function sendAuditFormFollowup(inviteeEmail) {
+  const siteBase = (process.env.SITE_BASE_URL || 'https://www.soraiadesigns.com').replace(/\/$/, '')
+  const auditUrl = `${siteBase}/audit`
+  const html = `
+    <p>Thanks for booking.</p>
+    <p>To help us prepare for your call, please complete the audit request form here before we meet:</p>
+    <p><a href="${auditUrl}"><strong>${auditUrl}</strong></a></p>
+    <p>Once that is in, we will have the right context going into the conversation.</p>
+    <p>Abe<br/>Soraia Designs</p>
+  `
+  return sendResendEmail({
+    toEmail: inviteeEmail,
+    subject: 'Quick step before your call',
+    html,
+  })
+}
+
 function shouldResumeAfterCancel(contact, payload) {
   const status = contact?.audit_nurture_status || ''
   const rescheduled = payload?.rescheduled === true
   return status === 'paused_booked' && !rescheduled
 }
 
-async function syncBooked(email) {
-  const contact = await findContactByEmail(email)
-  if (!contact?.id) return { ok: true, skipped: true, reason: 'contact_not_found', email }
+async function syncBooked(lookupEmail, inviteeEmail, eventType, payload) {
+  const isAuditReview = isAuditReviewEvent(eventType)
+  const answeredNo = isAuditReview && completedAuditIsNo(payload)
+  let followupSent = false
+  let followupError = null
+
+  if (answeredNo) {
+    try {
+      await sendAuditFormFollowup(inviteeEmail)
+      followupSent = true
+    } catch (error) {
+      followupError = String(error)
+    }
+  }
+
+  const contact = await findContactByEmail(lookupEmail)
+  if (!contact?.id) {
+    return {
+      ok: true,
+      skipped: true,
+      reason: 'contact_not_found',
+      email: lookupEmail,
+      inviteeEmail,
+      followupSent,
+      followupError,
+      auditReviewAnsweredNo: answeredNo,
+    }
+  }
 
   const properties = {
     audit_nurture_status: 'paused_booked',
@@ -94,8 +162,17 @@ async function syncBooked(email) {
   }
 
   await updateContact(contact.id, properties)
-  await upsertBrevoContact({ ...contact, ...properties, id: contact.id, email })
-  return { ok: true, action: 'booked', email, contactId: contact.id }
+  await upsertBrevoContact({ ...contact, ...properties, id: contact.id, email: lookupEmail })
+  return {
+    ok: true,
+    action: 'booked',
+    email: lookupEmail,
+    inviteeEmail,
+    contactId: contact.id,
+    followupSent,
+    followupError,
+    auditReviewAnsweredNo: answeredNo,
+  }
 }
 
 async function syncCanceled(email, payload) {
@@ -140,17 +217,19 @@ export default async function handler(req, res) {
   }
 
   const payload = extractPayload(body)
-  const email = extractEmail(payload)
+  const inviteeEmail = extractEmail(payload)
   const eventUri = extractEventUri(payload)
   const eventType = extractEventTypeLabel(payload)
+  const auditEmail = auditEmailAnswer(payload)
+  const lookupEmail = isAuditReviewEvent(eventType) && auditEmail ? auditEmail : inviteeEmail
 
-  if (!email) {
+  if (!inviteeEmail) {
     return res.status(200).json({ ok: true, skipped: true, reason: 'missing_email', event: eventName, eventUri, eventType })
   }
 
   const result = eventName === 'invitee.created'
-    ? await syncBooked(email)
-    : await syncCanceled(email, payload)
+    ? await syncBooked(lookupEmail, inviteeEmail, eventType, payload)
+    : await syncCanceled(lookupEmail, payload)
 
-  return res.status(200).json({ ok: true, event: eventName, email, eventUri, eventType, result })
+  return res.status(200).json({ ok: true, event: eventName, email: inviteeEmail, lookupEmail, eventUri, eventType, result })
 }
