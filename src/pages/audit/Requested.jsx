@@ -13,7 +13,7 @@ const steps = [
   {
     n: '02',
     title: 'A senior strategist audits the property',
-    body: 'Listing photos, title, design-to-revenue gaps, forced-equity opportunities, exit positioning.',
+    body: 'Listing photos, design lane, comp-set patterns, revenue math, and an honest read on what your budget can and cannot do.',
   },
   {
     n: '03',
@@ -79,7 +79,7 @@ export default function AuditRequested() {
               className="font-sans text-mid-charcoal/75 leading-relaxed"
               style={{ fontSize: 16 }}
             >
-              We'll cover ADR + RevPAR benchmarking, listing visibility, design-to-revenue gaps, forced-equity opportunities, and a prioritized capital-allocation roadmap — written specifically for your property.
+              We'll cover where you sit in your market, what the top comps are doing differently, the revenue math at three rate bands, and an honest budget read on what gets you there — written specifically for your property.
             </motion.p>
           </div>
         </section>

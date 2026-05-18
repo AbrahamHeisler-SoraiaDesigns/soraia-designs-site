@@ -39,33 +39,23 @@ function Reveal({ children, delay = 0, className = '' }) {
 const pillars = [
   {
     n: '01',
-    title: 'ADR + RevPAR benchmark',
-    body: 'We benchmark your current ADR and RevPAR against the top quartile of your submarket comps (pulled from Airbtics). You see exactly where you sit and what the ceiling looks like.',
+    title: 'Executive diagnosis + audit score',
+    body: 'Where your property sits in its design lane, what your audit score is (weighted blend of rating, sub-rating gaps, comp-set positioning, design-lane clarity), and which review themes are telling the real story. The pattern your reviews actually surface — not the one Airbnb shows you.',
   },
   {
     n: '02',
-    title: 'Listing visibility audit',
-    body: 'The first 4 photos and your title carry 80% of the click decision. We show you which signals you\'re sending and where they\'re costing you.',
+    title: 'Market position vs. comps',
+    body: 'ADR + RevPAR benchmark against the top quartile of your submarket (pulled from Airbtics). You see exactly where you sit, what the median earns, and where the ceiling lands for your bed/bath profile.',
   },
   {
     n: '03',
-    title: 'Design-to-revenue gap analysis',
-    body: 'We map the design gaps that are most likely depressing your nightly rate — ranked by ROI, not by what looks "nicer."',
+    title: 'Comp-set differentiator scan',
+    body: '6–8 named comps in your catchment with estimated ADRs, plus the three patterns the top earners use to charge $60–$100 more per night than the market median. Specific, with sources — not generic best-practice advice.',
   },
   {
     n: '04',
-    title: 'Forced-equity opportunities',
-    body: 'The upgrades that move both your nightly rate AND your appraised value, so you can refinance into the next acquisition without bringing fresh cash to the table.',
-  },
-  {
-    n: '05',
-    title: 'Capital-allocation roadmap',
-    body: 'A prioritized list of investments with rough cost ranges and expected payback windows. You\'ll know what to do first, what can wait, and what isn\'t worth doing at all.',
-  },
-  {
-    n: '06',
-    title: 'Exit-positioning notes',
-    body: 'How to set the property up to sell as a performing business with a documented design system — not just a furnished house. The premium investors leave on the table at sale ranges 15–25% in our experience; this section maps where yours might land.',
+    title: 'Revenue case + recommended path + budget reality',
+    body: 'Three rate-band scenarios with annual revenue deltas, two implementation paths (strategic refresh vs. top-performer push) with realistic budget ranges, and the part most audits dodge — what each budget level can and cannot actually do for your property.',
   },
 ]
 
@@ -88,6 +78,23 @@ const painPoints = [
 export default function AuditLanding() {
   useEffect(() => {
     document.title = 'Free STR Property Audit | Soraia Designs'
+    const setMeta = (name, content) => {
+      let el = document.querySelector(`meta[name="${name}"]`)
+      if (!el) {
+        el = document.createElement('meta')
+        el.setAttribute('name', name)
+        document.head.appendChild(el)
+      }
+      el.setAttribute('content', content)
+    }
+    setMeta(
+      'description',
+      'Get a free STR property audit from Soraia Designs. ADR benchmarking against top-quartile comps, comp-set differentiator scan, three-band revenue case, and an honest budget read. Senior strategist on every audit. No pitch.'
+    )
+    setMeta(
+      'keywords',
+      'STR property audit, short-term rental audit, Airbnb ADR optimization, vacation rental design audit, STR comp analysis, STR investor design, STR revenue audit'
+    )
   }, [])
 
   return (
@@ -204,7 +211,7 @@ export default function AuditLanding() {
               </p>
             </Reveal>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
               {pillars.map((pillar, i) => (
                 <Reveal key={pillar.n} delay={i}>
                   <div className="border-l-2 border-brass pl-6 h-full">
@@ -227,6 +234,15 @@ export default function AuditLanding() {
                 </Reveal>
               ))}
             </div>
+
+            <Reveal delay={4}>
+              <p
+                className="font-sans italic text-mid-charcoal/75 max-w-3xl mt-12 leading-relaxed"
+                style={{ fontSize: 15 }}
+              >
+                Forced-equity strategy and exit positioning are covered in the post-audit strategy session, not the written audit. The audit gives you the read; the session walks the refi/exit math against your actual numbers.
+              </p>
+            </Reveal>
 
             {/* CTA card — Warm Stone */}
             <Reveal delay={3}>
