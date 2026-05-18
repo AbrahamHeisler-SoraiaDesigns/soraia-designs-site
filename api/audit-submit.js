@@ -220,11 +220,14 @@ export default async function handler(req, res) {
     hubspotSubmit = await postToHubspotForm(merged)
   } catch (error) {
     console.error('[audit-submit] HubSpot post failed:', error)
-    return res.status(502).json({
-      ok: false,
-      message: 'We could not save this audit request right now. Please try again in a few minutes or email abe@soraiadesigns.com.',
-      code: 'HUBSPOT_SUBMIT_FAILED',
-    })
+    if (!process.env.HUBSPOT_SERVICE_KEY) {
+      return res.status(502).json({
+        ok: false,
+        message: 'We could not save this audit request right now. Please try again in a few minutes or email abe@soraiadesigns.com.',
+        code: 'HUBSPOT_SUBMIT_FAILED',
+      })
+    }
+    hubspotSubmit = { skipped: true, reason: 'hubspot_form_failed_fallback_to_service_key' }
   }
 
   let contact = null
