@@ -22,8 +22,8 @@ const steps = [
   },
   {
     n: '04',
-    title: 'Optional: 30-min strategy call',
-    body: 'If you want to walk through it together, book the call. If not, no follow-up pressure.',
+    title: 'Optional: audit review call',
+    body: 'If you want to walk through the audit together, book the review call. If not, no follow-up pressure.',
   },
 ]
 
@@ -113,16 +113,16 @@ export default function AuditRequested() {
                 className="font-serif text-ivory mb-6"
                 style={{ fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 400 }}
               >
-                Book your strategy call <em className="not-italic font-medium">now</em>.
+                Book your audit review call <em className="not-italic font-medium">now</em>.
               </h2>
               <p className="font-sans text-stone/75 max-w-2xl mx-auto leading-relaxed" style={{ fontSize: 16 }}>
-                If you'd rather walk through your audit together when it's ready, lock in a 30-minute strategy call now. Calendar fills up first.
+                If you'd rather walk through your audit together when it's ready, lock in your audit review / next steps call now. Calendar fills up first.
               </p>
             </div>
             <div className="bg-ivory" style={{ minHeight: 720 }}>
               <iframe
-                title="Book a 30-min strategy call with Abe"
-                src="https://calendly.com/abe-soraiadesigns/30min?hide_gdpr_banner=1"
+                title="Book your audit review / next steps call with Soraia Designs"
+                src="https://calendly.com/soraiadesigns/str-design-audit-review?hide_gdpr_banner=1"
                 width="100%"
                 height="720"
                 frameBorder="0"

@@ -66,7 +66,7 @@ export default function Nav() {
 
         {/* Desktop CTA */}
         <a
-          href="https://calendly.com/abe-soraiadesigns/30min"
+          href="https://calendly.com/soraiadesigns/str-consult"
           target="_blank"
           rel="noopener noreferrer"
           className="hidden md:inline-block font-sans text-xs font-medium tracking-widest uppercase px-6 py-3 border border-brass text-charcoal hover:bg-brass hover:text-charcoal transition-all duration-300"
@@ -112,7 +112,7 @@ export default function Nav() {
             </li>
             <li className="pt-2">
               <a
-                href="https://calendly.com/abe-soraiadesigns/30min"
+                href="https://calendly.com/soraiadesigns/str-consult"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-primary block text-center"

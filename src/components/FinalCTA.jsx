@@ -48,7 +48,7 @@ export default function FinalCTA() {
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <a
-            href="https://calendly.com/abe-soraiadesigns/30min"
+            href="https://calendly.com/soraiadesigns/str-consult"
             target="_blank"
             rel="noopener noreferrer"
             className="btn-primary text-base px-12 py-5"

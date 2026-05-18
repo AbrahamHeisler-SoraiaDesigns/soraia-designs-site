@@ -297,7 +297,7 @@ export default function AuditLanding() {
                 Want the audit first? <Link to="/audit/get-started" className="text-brass underline hover:text-ivory transition-colors">Get it free below.</Link>{' '}
                 Want to talk execution now?{' '}
                 <a
-                  href="https://calendly.com/abe-soraiadesigns/30min"
+                  href="https://calendly.com/soraiadesigns/str-consult"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-brass underline hover:text-ivory transition-colors"
