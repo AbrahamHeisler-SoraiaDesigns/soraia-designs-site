@@ -50,7 +50,9 @@ export async function sendNurtureEmail(contact, emailKey) {
   const nextNurtureStatus = emailKey === EMAIL_KEYS.EMAIL_5 ? 'completed' : 'active'
   const claimTime = isoNow()
   await updateContact(freshContact.id, {
-    audit_brevo_sync_status: 'sending',
+    // HubSpot allowed values: pending, synced, suppressed, errored
+    // Use `pending` while the send is in flight; `sending` is not a valid enum option.
+    audit_brevo_sync_status: 'pending',
     audit_brevo_last_sync_at: claimTime,
     audit_nurture_status: nextNurtureStatus,
     audit_last_email_key: emailKey,
