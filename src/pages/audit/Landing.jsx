@@ -356,12 +356,131 @@ export default function AuditLanding() {
                 Built for STR owners with 2+ properties thinking about the next refinance, the next acquisition, or the eventual sale.
               </p>
             </Reveal>
+          </div>
+        </section>
+
+        {/* PROOF BAND */}
+        <section id="proof" className="px-6 lg:px-12 py-24 lg:py-32 bg-ivory border-t border-stone/40">
+          <div className="max-w-7xl mx-auto">
+            <Reveal>
+              <p className="section-label mb-4">Documented results</p>
+            </Reveal>
+            <Reveal delay={1}>
+              <h2
+                className="font-serif text-charcoal mb-6"
+                style={{ fontSize: 'clamp(30px, 4vw, 48px)', fontWeight: 400 }}
+              >
+                We don't post stats we can't source. Here are two <em className="not-italic font-medium">we can</em>.
+              </h2>
+            </Reveal>
+            <Reveal delay={2}>
+              <p
+                className="font-sans text-mid-charcoal max-w-3xl leading-relaxed mb-16"
+                style={{ fontSize: 18 }}
+              >
+                Two properties we've designed, with the operating data their owners signed off on. One sat on a ~$60K market average and now earns $200K+ a year — a 1.7×–2.2× lift measured against its nearest comparable homes, not a market-wide average. The other is on a stretch-case trajectory beyond 6× on a property built for top-of-comp pricing power.
+              </p>
+            </Reveal>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+              {/* B727 — realized lift */}
+              <Reveal delay={2}>
+                <div className="bg-charcoal p-8 lg:p-10 h-full flex flex-col gap-6">
+                  <div>
+                    <p className="section-label text-brass mb-2">Bungalow 727 · Madeira Beach, FL</p>
+                    <p className="font-sans text-stone/60 tracking-widest mb-6" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      4 years operating · realized lift
+                    </p>
+                  </div>
+                  <div className="space-y-0 flex-1 divide-y divide-stone/15">
+                    <div className="flex justify-between items-baseline py-3">
+                      <span className="font-sans text-stone/75 text-sm">Market average (dollar story)</span>
+                      <span className="font-sans text-ivory font-medium text-sm">~$60K / yr</span>
+                    </div>
+                    <div className="flex justify-between items-baseline py-3">
+                      <span className="font-sans text-stone/75 text-sm">Current annual revenue</span>
+                      <span className="font-sans text-ivory font-medium text-sm">$200K–$250K</span>
+                    </div>
+                    <div className="flex justify-between items-baseline py-3">
+                      <span className="font-sans text-stone/55 text-xs leading-snug max-w-[200px]">Cohort baseline — 25th pct, 40 nearest 4BR comps, same ZIP</span>
+                      <span className="font-sans text-stone/55 text-xs">$115K / yr</span>
+                    </div>
+                    <div className="flex justify-between items-center py-4">
+                      <span className="font-sans text-stone/80 text-sm">Lift vs. cohort baseline</span>
+                      <span className="font-serif text-brass" style={{ fontSize: 28, fontWeight: 500 }}>1.7×–2.2×</span>
+                    </div>
+                  </div>
+                  <p className="font-sans text-stone/50 leading-relaxed" style={{ fontSize: 12 }}>
+                    4 yrs Superhost · Guest Favorite (top 10%) · 25 reviews all 5-star · 4.96/5.0
+                  </p>
+                  <a
+                    href="https://drive.google.com/file/d/1o0jnQ9nl6-8LUvgLEOJECN38HTAEPQBC/view"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-sans font-medium tracking-widest text-brass hover:text-ivory transition-colors self-start"
+                    style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                  >
+                    Read the full case study (PDF) →
+                  </a>
+                </div>
+              </Reveal>
+
+              {/* Flamingo Sol — trajectory only */}
+              <Reveal delay={3}>
+                <div className="bg-stone p-8 lg:p-10 h-full flex flex-col gap-6">
+                  <div>
+                    <p className="section-label text-charcoal/60 mb-2">Flamingo Sol · Bradenton, FL</p>
+                    <p className="font-sans text-charcoal/45 tracking-widest mb-6" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Active · early ramp · trajectory
+                    </p>
+                  </div>
+                  <div className="space-y-0 flex-1 divide-y divide-charcoal/12">
+                    <div className="flex justify-between items-baseline py-3">
+                      <span className="font-sans text-charcoal/65 text-sm">Bradenton market avg (per listing)</span>
+                      <span className="font-sans text-charcoal font-medium text-sm">$30.7K / yr</span>
+                    </div>
+                    <div className="flex justify-between items-baseline py-3">
+                      <span className="font-sans text-charcoal/65 text-sm">Flamingo Sol target annual</span>
+                      <span className="font-sans text-charcoal font-medium text-sm">$200K</span>
+                    </div>
+                    <div className="flex justify-between items-baseline py-3">
+                      <span className="font-sans text-charcoal/50 text-xs">Pricing power</span>
+                      <span className="font-sans text-charcoal/50 text-xs text-right" style={{ maxWidth: 180 }}>
+                        $772 off-peak · $1,189 shoulder · $1,993 peak
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-4">
+                      <span className="font-sans text-charcoal/65 text-sm">Trajectory vs. baseline*</span>
+                      <span className="font-serif text-charcoal" style={{ fontSize: 28, fontWeight: 500 }}>~6.5×</span>
+                    </div>
+                  </div>
+                  <p className="font-sans text-charcoal/45 italic leading-relaxed" style={{ fontSize: 12 }}>
+                    *Projected — full year not yet ramped. This is a target, not a realized result.
+                  </p>
+                  <a
+                    href="https://drive.google.com/file/d/1C9ZWbOWzSSl-kiyxZOVO7Yh9oYUalwug/view"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-sans font-medium tracking-widest text-charcoal hover:text-brass transition-colors self-start"
+                    style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                  >
+                    Read the full case study (PDF) →
+                  </a>
+                </div>
+              </Reveal>
+            </div>
+
             <Reveal delay={4}>
               <p
-                className="mt-12 font-sans text-mid-charcoal/65 italic border-l-2 border-brass pl-6"
+                className="mt-10 font-sans text-mid-charcoal/75 leading-relaxed"
                 style={{ fontSize: 15 }}
               >
-                We don't post stats we can't source. The audit will give you ranges grounded in your actual comps — not someone else's average.
+                Your range depends on your starting point, your market, and how much of the playbook fits your property — which is what the audit tells you.
+              </p>
+            </Reveal>
+            <Reveal delay={4}>
+              <p className="mt-2 font-sans text-mid-charcoal/45 italic" style={{ fontSize: 13 }}>
+                Reflects one documented project; individual results vary.
               </p>
             </Reveal>
           </div>
