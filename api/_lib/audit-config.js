@@ -35,6 +35,13 @@ export const HUBSPOT_CONTACT_BASE_PROPS = [
   'audit_last_email_sent_at',
   'audit_brevo_sync_status',
   'audit_brevo_last_sync_at',
+  'audit_referrer',
+  'audit_landing_page',
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_content',
+  'utm_term',
   'hs_lead_status',
 ]
 

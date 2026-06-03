@@ -97,6 +97,11 @@ export function auditContactProps(payload) {
     audit_notes: payload.notes || '',
     audit_referrer: payload.referrer || '',
     audit_landing_page: payload.landing_page || '',
+    utm_source: payload.utm_source || '',
+    utm_medium: payload.utm_medium || '',
+    utm_campaign: payload.utm_campaign || '',
+    utm_content: payload.utm_content || '',
+    utm_term: payload.utm_term || '',
     ...monitoringPropsForSubmit(payload),
   }
 }
