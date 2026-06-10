@@ -59,6 +59,9 @@ export const EMAIL_KEYS = {
   EMAIL_3: 'email_3_one_question',
   EMAIL_4: 'email_4_math',
   EMAIL_5: 'email_5_last_note',
+  // Drop-off recovery layer (SOR-127 §4): audit delivered, no booking, core cadence done.
+  RECOVERY_1: 'recovery_1_one_more_thing',
+  RECOVERY_2: 'recovery_2_closing_file',
 }
 
 export const ACTIVE_NURTURE_STATUSES = new Set(['active', 'not_enrolled'])
