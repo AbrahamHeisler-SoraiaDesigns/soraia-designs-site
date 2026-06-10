@@ -27,6 +27,9 @@ export function nextEmailKey(contact) {
   if (lastKey === EMAIL_KEYS.EMAIL_2 && since >= 2) return EMAIL_KEYS.EMAIL_3
   if (lastKey === EMAIL_KEYS.EMAIL_3 && since >= 2) return EMAIL_KEYS.EMAIL_4
   if (lastKey === EMAIL_KEYS.EMAIL_4 && since >= 5) return EMAIL_KEYS.EMAIL_5
+  // Drop-off recovery: Email 5 + 14d, then + 16d (= Email 5 + 30d). Suppressed on booking/reply.
+  if (lastKey === EMAIL_KEYS.EMAIL_5 && since >= 14) return EMAIL_KEYS.RECOVERY_1
+  if (lastKey === EMAIL_KEYS.RECOVERY_1 && since >= 16) return EMAIL_KEYS.RECOVERY_2
   return null
 }
 
@@ -47,7 +50,8 @@ export async function sendNurtureEmail(contact, emailKey) {
     return { ok: true, skipped: true, reason: 'sequence_state_changed', expectedNextEmail }
   }
 
-  const nextNurtureStatus = emailKey === EMAIL_KEYS.EMAIL_5 ? 'completed' : 'active'
+  // Stay 'active' through the recovery layer; only the final recovery touch completes the nurture.
+  const nextNurtureStatus = emailKey === EMAIL_KEYS.RECOVERY_2 ? 'completed' : 'active'
   const claimTime = isoNow()
   await updateContact(freshContact.id, {
     // HubSpot allowed values: pending, synced, suppressed, errored
@@ -82,13 +86,24 @@ export async function sendNurtureEmail(contact, emailKey) {
         html: email.html,
       })
     } else {
-      await sendBrevoEmail({
-        toEmail: freshContact.email,
-        toName: firstName(contactForSend),
-        subject: email.subject,
-        html: email.html,
-        previewText: email.previewText,
-      })
+      try {
+        await sendBrevoEmail({
+          toEmail: freshContact.email,
+          toName: firstName(contactForSend),
+          subject: email.subject,
+          html: email.html,
+          previewText: email.previewText,
+        })
+      } catch (brevoSendError) {
+        // Brevo unavailable (e.g. key/config). Fall back to the proven Resend path so the
+        // sequence still delivers; surface the Brevo failure for follow-up without blocking the send.
+        console.error('brevo_send_failed_fallback_resend', emailKey, String(brevoSendError))
+        await sendResendEmail({
+          toEmail: freshContact.email,
+          subject: email.subject,
+          html: email.html,
+        })
+      }
     }
   } catch (error) {
     await updateContact(freshContact.id, {
@@ -108,7 +123,7 @@ export async function sendNurtureEmail(contact, emailKey) {
     audit_last_email_key: emailKey,
     audit_last_email_sent_at: claimTime,
   }
-  if (emailKey === EMAIL_KEYS.EMAIL_5) props.hs_lead_status = 'NURTURE_FATIGUED'
+  if (emailKey === EMAIL_KEYS.EMAIL_5 || emailKey === EMAIL_KEYS.RECOVERY_2) props.hs_lead_status = 'NURTURE_FATIGUED'
   await updateContact(freshContact.id, props)
   return { ok: true, emailKey }
 }

@@ -148,6 +148,20 @@ function bullets(items) {
   return `<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`
 }
 
+// Drop-off recovery angle, keyed to the lead's audit_primary_goal (real HubSpot enum values).
+// The one piece that needs a live conversation rather than a PDF.
+function dropoffAngle(contact) {
+  const goal = contact.audit_primary_goal || contact.primary_goal || ''
+  const map = {
+    increase_occupancy: 'How to position the listing so the platform starts treating it as a top-tier comp instead of a substitutable one. That shift compounds, and the audit cannot model it without your live booking data.',
+    increase_adr: 'Which specific design moves let you hold a higher nightly rate without losing occupancy, and the order to sequence them so rate and bookings move together instead of against each other.',
+    force_equity: 'Which design moves the appraisal actually credits, versus the ones guests love but appraisers ignore, and the budget order that protects your refinance math.',
+    position_for_exit: 'How a buyer will value this property at sale, and the design arc that moves it from an Airbnb to a stabilized asset with an income story. Different sequencing, different return on each dollar.',
+    launch_well: 'How to launch so the first 90 days build review velocity and ranking instead of leaking it. That early window sets the property ceiling for years.',
+  }
+  return map[goal] || 'Which of the priority fixes to do first. That order depends on your specific situation and goals, not the audit general logic.'
+}
+
 export function buildEmailContent(emailKey, contact) {
   const name = firstName(contact)
   const propertyLine = formatPropertyLine(contact)
@@ -159,14 +173,14 @@ export function buildEmailContent(emailKey, contact) {
   switch (emailKey) {
     case EMAIL_KEYS.EMAIL_1:
       return {
-        subject: "We've got your audit request — here's what's next",
+        subject: "We've got your audit request. Here's what's next",
         previewText: `Audit on ${propertyLine || propertyStreet} is in motion. Here's the timeline.`,
         html: htmlParagraphs([
           `Hi ${name},`,
           `Thanks for the audit request on <strong>${propertyLine}</strong>.`,
           `Here's how this works:`,
         ]) + bullets([
-          '<strong>A senior strategist starts on your property today.</strong> Not an automated report — actual eyes on your listing, your comps, and your design. Soraia Heisler reviews every audit personally before it ships.',
+          '<strong>A senior strategist starts on your property today.</strong> Not an automated report. Actual eyes on your listing, your comps, and your design. Soraia Heisler reviews every audit personally before it ships.',
           `<strong>Expect your written audit inside 5 business days.</strong> It'll cover ADR + RevPAR benchmarking, listing visibility, design-to-revenue gaps, forced-equity opportunities, and a prioritized roadmap.`,
           '<strong>The audit is yours.</strong> Whether or not we ever work together, you walk away with the report.',
         ]) + htmlParagraphs([
@@ -178,7 +192,7 @@ export function buildEmailContent(emailKey, contact) {
       }
     case EMAIL_KEYS.EMAIL_2:
       return {
-        subject: `Your audit on ${propertyStreet} — yours to keep`,
+        subject: `Your audit on ${propertyStreet}, yours to keep`,
         previewText: 'PDF attached. Senior strategist notes inside.',
         html: htmlParagraphs([
           `Hi ${name},`,
@@ -187,7 +201,7 @@ export function buildEmailContent(emailKey, contact) {
           'Quick summary of what\'s inside:',
         ]) + bullets([
           'ADR + RevPAR benchmark vs. your submarket\'s top quartile',
-          'Listing visibility audit — first 4 photos, title, signal-to-noise',
+          'Listing visibility audit: first 4 photos, title, signal-to-noise',
           'Design-to-revenue gaps ranked by ROI',
           'Forced-equity opportunities and capital-allocation roadmap',
           'Exit-positioning notes for if/when you sell',
@@ -201,11 +215,11 @@ export function buildEmailContent(emailKey, contact) {
     case EMAIL_KEYS.EMAIL_3:
       return {
         subject: 'One question on your audit',
-        previewText: "What stood out — and what didn't.",
+        previewText: "What stood out, and what didn't.",
         html: htmlParagraphs([
           `Hi ${name},`,
           `Quick check-in on the audit we sent for <strong>${propertyStreet}</strong>.`,
-          '<strong>One question: what stood out — and what didn\'t?</strong>',
+          '<strong>One question: what stood out, and what didn\'t?</strong>',
           'Every property has one or two opportunities that materially move the needle, and four or five that look interesting but do not change the math.',
           `You can just hit reply, or <a href="${callUrl}">book the audit review call</a> and we'll walk through the roadmap together.`,
           'Abe',
@@ -243,6 +257,31 @@ export function buildEmailContent(emailKey, contact) {
           `If the answer is yes and the timing's right, <a href="${callUrl}">book the audit review call</a>.`,
           "If the timing isn't right, totally fair. Hold onto the audit and come back when you're ready.",
           'Either way, glad we got to look at the property.',
+          'Abe Heisler<br/>Soraia Designs',
+        ]) + footer,
+      }
+    case EMAIL_KEYS.RECOVERY_1:
+      return {
+        subject: "One thing we didn't get to in your audit",
+        previewText: 'The part that needs a live conversation.',
+        html: htmlParagraphs([
+          `Hi ${name},`,
+          `The audit covered what <strong>${propertyStreet}</strong> is doing now and the highest-leverage moves. There is one piece that does not fit cleanly into a PDF:`,
+          dropoffAngle(contact),
+          'If that is a real question for you, a short strategy call is where we map it against your actual numbers.',
+          `<a href="${callUrl}">Book your audit review call</a>`,
+          'Abe Heisler<br/>Soraia Designs',
+        ]) + footer,
+      }
+    case EMAIL_KEYS.RECOVERY_2:
+      return {
+        subject: 'Last note before we close your audit file',
+        previewText: 'Honest update on our end.',
+        html: htmlParagraphs([
+          `Hi ${name},`,
+          'We rotate our audit pipeline every quarter, and your file moves to the archive next week. Nothing dramatic, just internal housekeeping.',
+          `If the timing has shifted and you want to talk before then, here is the link: <a href="${callUrl}">book your audit review call</a>.`,
+          `Otherwise, I hope the audit notes still earn their keep on <strong>${propertyStreet}</strong>.`,
           'Abe Heisler<br/>Soraia Designs',
         ]) + footer,
       }
