@@ -1,6 +1,6 @@
-import { auditFormSchema } from '../src/lib/audit-schema.js'
+import { auditStage1Schema, auditEnrichmentSchema } from '../src/lib/audit-schema.js'
 import { DEFAULT_PIXEL_ID, EMAIL_KEYS, HUBSPOT_PORTAL_ID } from './_lib/audit-config.js'
-import { buildContactUrl, findContactByEmail, syncMonitoringPropsByEmail, updateContact, upsertAuditContactByEmail, upsertAuditDeal } from './_lib/hubspot.js'
+import { buildContactUrl, enrichAuditContactByEmail, findContactByEmail, syncMonitoringPropsByEmail, updateContact, upsertAuditContactByEmail, upsertAuditDeal } from './_lib/hubspot.js'
 import { ensureAuditProspectDriveStructure } from './_lib/drive.js'
 import { syncLeadToBrevoAndMark } from './_lib/nurture.js'
 import { upsertBrevoAuditDeal } from './_lib/brevo.js'
@@ -186,7 +186,36 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, event_id: null, honeypot: true })
   }
 
-  const parsed = auditFormSchema.safeParse(raw)
+  const stage = Number(raw?.stage) || 1
+
+  // ── Stage 2: enrich an already-captured lead (best-effort, non-blocking) ──
+  // The lead was created server-side at Stage 1, so a failure here never costs
+  // us the lead. We update the contact's audit_* props; the Lead pixel/CAPI and
+  // nurture enrollment already fired at capture and are not repeated.
+  if (stage === 2) {
+    const parsedEnrich = auditEnrichmentSchema.safeParse(raw)
+    if (!parsedEnrich.success) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: parsedEnrich.error.flatten?.() ?? parsedEnrich.error,
+      })
+    }
+    const enrichData = parsedEnrich.data
+    let enriched = null
+    try {
+      enriched = await enrichAuditContactByEmail({ ...raw, ...enrichData })
+    } catch (error) {
+      console.error('[audit-submit] stage-2 enrichment failed (non-blocking):', error)
+    }
+    return res.status(200).json({
+      ok: true,
+      stage: 2,
+      enriched: enriched?.updated ?? false,
+      contact_url: enriched?.id ? buildContactUrl(enriched.id) : null,
+    })
+  }
+
+  const parsed = auditStage1Schema.safeParse(raw)
   if (!parsed.success) {
     return res.status(400).json({
       message: 'Validation failed',

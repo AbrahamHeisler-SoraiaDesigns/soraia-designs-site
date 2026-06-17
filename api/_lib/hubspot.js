@@ -106,6 +106,33 @@ export function auditContactProps(payload) {
   }
 }
 
+// Stage-2 enrichment: only the fields collected after capture. Blank/missing
+// values are dropped so we never overwrite a captured value with an empty one.
+export function enrichmentContactProps(payload) {
+  const candidate = {
+    phone: payload.phone || '',
+    audit_property_bathrooms: payload.property_bathrooms != null ? String(payload.property_bathrooms) : '',
+    audit_is_listed: payload.is_listed || '',
+    audit_listing_url: payload.listing_url || '',
+    audit_primary_goal: payload.primary_goal || '',
+    audit_target_adr: payload.target_adr != null ? String(payload.target_adr) : '',
+    audit_current_performance: payload.current_performance || '',
+    audit_budget_tier: payload.budget_tier || '',
+    audit_timeline: payload.timeline || '',
+    audit_notes: payload.notes || '',
+  }
+  return Object.fromEntries(Object.entries(candidate).filter(([, v]) => v !== '' && v != null))
+}
+
+export async function enrichAuditContactByEmail(payload) {
+  const existing = await findContactByEmail(payload.email)
+  if (!existing?.id) return null
+  const props = enrichmentContactProps(payload)
+  if (Object.keys(props).length === 0) return { id: existing.id, ...existing, updated: false }
+  await updateContact(existing.id, props)
+  return { id: existing.id, ...existing, ...props, updated: true }
+}
+
 export async function upsertAuditContactByEmail(payload) {
   const existing = await findContactByEmail(payload.email)
   const properties = auditContactProps(payload)

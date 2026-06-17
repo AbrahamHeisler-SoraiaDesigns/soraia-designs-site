@@ -5,7 +5,8 @@ import { useNavigate } from 'react-router-dom'
 import AuditNav from '../../components/AuditNav'
 import Footer from '../../components/Footer'
 import {
-  auditFormSchema,
+  auditStage1Schema,
+  auditEnrichmentSchema,
   US_STATES,
   PRIMARY_GOAL_OPTIONS,
   CURRENT_PERFORMANCE_OPTIONS,
@@ -33,6 +34,7 @@ function getUtmAndAttribution() {
     gclid: get('gclid'),
     fbp: cookie('_fbp'),
     fbc: cookie('_fbc'),
+    hubspotutk: cookie('hubspotutk'),
   }
 }
 
@@ -57,31 +59,35 @@ function Field({ label, error, help, required, children }) {
 
 export default function AuditGetStarted() {
   const navigate = useNavigate()
+  const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [captured, setCaptured] = useState(null) // { full_name, email } carried into Stage 2
 
   useEffect(() => {
     document.title = 'Request Your Audit | Soraia Designs'
   }, [])
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(auditFormSchema),
+  const stage1 = useForm({
+    resolver: zodResolver(auditStage1Schema),
+    mode: 'onBlur',
+  })
+
+  const stage2 = useForm({
+    resolver: zodResolver(auditEnrichmentSchema),
     defaultValues: { is_listed: 'No' },
     mode: 'onBlur',
   })
 
-  const isListed = watch('is_listed')
+  const isListed = stage2.watch('is_listed')
 
-  const onSubmit = async (data) => {
+  // Stage 1 — the conversion event. Capture the lead server-side, fire the
+  // Lead pixel, then advance to the optional enrichment step.
+  const onCapture = async (data) => {
     setSubmitting(true)
     setSubmitError('')
     try {
-      const payload = { ...data, ...getUtmAndAttribution() }
+      const payload = { ...data, ...getUtmAndAttribution(), stage: 1 }
       const res = await fetch('/api/audit-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,11 +104,38 @@ export default function AuditGetStarted() {
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Lead', {}, { eventID: result.event_id })
       }
-      navigate('/audit/requested')
+      setCaptured({ full_name: data.full_name, email: data.email })
+      setSubmitting(false)
+      setStep(2)
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setSubmitError(err.message || 'Something went wrong. Please try again or email abe@soraiadesigns.com.')
       setSubmitting(false)
     }
+  }
+
+  // Stage 2 — enrich the captured lead. Best-effort: the lead is already ours,
+  // so we route to the confirmation page even if enrichment hiccups.
+  const onEnrich = async (data) => {
+    setSubmitting(true)
+    setSubmitError('')
+    try {
+      const payload = {
+        ...data,
+        email: captured?.email,
+        full_name: captured?.full_name,
+        ...getUtmAndAttribution(),
+        stage: 2,
+      }
+      await fetch('/api/audit-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+    } catch {
+      // non-blocking — the lead was captured at Stage 1
+    }
+    navigate('/audit/requested')
   }
 
   return (
@@ -113,15 +146,21 @@ export default function AuditGetStarted() {
         <section className="px-6 lg:px-12 py-16 lg:py-24">
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] gap-12 items-start">
             <div>
-              <p className="section-label mb-4">Get the audit</p>
+              <p className="section-label mb-4">{step === 1 ? 'Get the audit' : 'Step 2 of 2 — optional'}</p>
               <h1
                 className="font-serif text-charcoal mb-4"
                 style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 400 }}
               >
-                Tell us about the <em className="not-italic font-medium">property</em>.
+                {step === 1 ? (
+                  <>Tell us about the <em className="not-italic font-medium">property</em>.</>
+                ) : (
+                  <>Your request is <em className="not-italic font-medium">in</em>.</>
+                )}
               </h1>
               <p className="font-sans text-mid-charcoal mb-8 leading-relaxed max-w-2xl" style={{ fontSize: 17 }}>
-                Senior strategist on every audit. Written report back within 48 hours.
+                {step === 1
+                  ? 'Senior strategist on every audit. Written report back within 48 hours.'
+                  : "A few quick questions sharpen your audit — but they're optional. You're already on the list."}
               </p>
 
               <div className="relative overflow-hidden border border-stone/40 bg-white/70 mb-12 lg:hidden">
@@ -133,166 +172,208 @@ export default function AuditGetStarted() {
                 />
               </div>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-10" noValidate>
-              {/* Honeypot */}
-              <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }}>
-                <label>Company legal name (do not fill)
-                  <input type="text" tabIndex={-1} autoComplete="off" {...register('_company_legal_name')} />
-                </label>
-              </div>
-
-              {/* About you */}
-              <fieldset className="space-y-6">
-                <legend className="font-serif text-charcoal mb-4" style={{ fontSize: 22, fontWeight: 500 }}>
-                  About you
-                </legend>
-                <Field label="Full name" required error={errors.full_name}>
-                  <input type="text" {...register('full_name')} className={inputBase} autoComplete="name" />
-                </Field>
-                <Field label="Email" required error={errors.email} help="Personal email reaches you faster than a role-based one.">
-                  <input type="email" {...register('email')} className={inputBase} autoComplete="email" />
-                </Field>
-                <Field
-                  label="Phone"
-                  error={errors.phone}
-                  help="Optional. US/CA — any format works (e.g. 813-555-1234, (813) 555 1234, 8135551234)."
-                >
-                  <input
-                    type="tel"
-                    {...register('phone')}
-                    className={inputBase}
-                    autoComplete="tel"
-                    placeholder="(813) 555-1234"
-                  />
-                </Field>
-              </fieldset>
-
-              {/* Property details */}
-              <fieldset className="space-y-6">
-                <legend className="font-serif text-charcoal mb-4" style={{ fontSize: 22, fontWeight: 500 }}>
-                  Property details
-                </legend>
-                <Field label="Street address" required error={errors.property_street}>
-                  <input type="text" {...register('property_street')} className={inputBase} autoComplete="address-line1" />
-                </Field>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Field label="City" required error={errors.property_city}>
-                    <input type="text" {...register('property_city')} className={inputBase} autoComplete="address-level2" />
-                  </Field>
-                  <Field label="State" required error={errors.property_state}>
-                    <select {...register('property_state')} className={inputBase} defaultValue="">
-                      <option value="" disabled>Select…</option>
-                      {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </Field>
-                  <Field label="ZIP" required error={errors.property_zip}>
-                    <input type="text" {...register('property_zip')} className={inputBase} autoComplete="postal-code" maxLength={5} />
-                  </Field>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Bedrooms" required error={errors.property_bedrooms}>
-                    <select {...register('property_bedrooms')} className={inputBase} defaultValue="">
-                      <option value="" disabled>Select…</option>
-                      {[1,2,3,4,5,6,7,8,9].map((n) => (
-                        <option key={n} value={n}>{n === 9 ? '8+' : n}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Bathrooms" required error={errors.property_bathrooms}>
-                    <select {...register('property_bathrooms')} className={inputBase} defaultValue="">
-                      <option value="" disabled>Select…</option>
-                      {[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,9].map((n) => (
-                        <option key={n} value={n}>{n === 9 ? '8+' : n}</option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
-              </fieldset>
-
-              {/* Listing + goals */}
-              <fieldset className="space-y-6">
-                <legend className="font-serif text-charcoal mb-4" style={{ fontSize: 22, fontWeight: 500 }}>
-                  Listing &amp; goals
-                </legend>
-                <Field label="Currently listed on Airbnb / VRBO?" required error={errors.is_listed}>
-                  <div className="flex flex-wrap gap-6">
-                    {IS_LISTED_OPTIONS.map((opt) => (
-                      <label key={opt} className="flex items-center gap-2 font-sans text-charcoal cursor-pointer">
-                        <input type="radio" value={opt} {...register('is_listed')} className="accent-brass" />
-                        <span>{opt}</span>
-                      </label>
-                    ))}
+              {/* ── STAGE 1 — lead capture (≤6 fields) ── */}
+              {step === 1 && (
+                <form onSubmit={stage1.handleSubmit(onCapture)} className="space-y-10" noValidate>
+                  {/* Honeypot */}
+                  <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }}>
+                    <label>Company legal name (do not fill)
+                      <input type="text" tabIndex={-1} autoComplete="off" {...stage1.register('_company_legal_name')} />
+                    </label>
                   </div>
-                </Field>
-                {isListed === 'Yes' && (
-                  <Field label="Listing URL" required error={errors.listing_url}>
-                    <input
-                      type="url"
-                      {...register('listing_url')}
-                      className={inputBase}
-                      placeholder="https://www.airbnb.com/rooms/..."
-                    />
-                  </Field>
-                )}
-                <Field label="Primary goal" required error={errors.primary_goal}>
-                  <select {...register('primary_goal')} className={inputBase} defaultValue="">
-                    <option value="" disabled>Select…</option>
-                    {PRIMARY_GOAL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </Field>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Target ADR (optional)" error={errors.target_adr} help="USD per night. Leave blank if unsure.">
-                    <input type="number" min="50" max="2000" {...register('target_adr')} className={inputBase} placeholder="350" />
-                  </Field>
-                  <Field label="Current performance (optional)" error={errors.current_performance}>
-                    <select {...register('current_performance')} className={inputBase} defaultValue="">
-                      <option value="">—</option>
-                      {CURRENT_PERFORMANCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </Field>
-                </div>
-                <Field label="Budget tier" required error={errors.budget_tier}>
-                  <select {...register('budget_tier')} className={inputBase} defaultValue="">
-                    <option value="" disabled>Select…</option>
-                    {BUDGET_TIER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </Field>
-                <Field label="Timeline" required error={errors.timeline}>
-                  <select {...register('timeline')} className={inputBase} defaultValue="">
-                    <option value="" disabled>Select…</option>
-                    {TIMELINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </Field>
-                <Field label="Anything else? (optional)" error={errors.notes}>
-                  <textarea
-                    {...register('notes')}
-                    className={inputBase}
-                    rows={4}
-                    maxLength={1000}
-                    placeholder="Refinance plans, exit timeline, design preferences, partnership structure — anything that helps us frame the audit."
-                  />
-                </Field>
-              </fieldset>
 
-              {submitError && (
-                <div className="border border-red-300 bg-red-50 px-4 py-3 font-sans text-red-800 text-sm">
-                  {submitError}
-                </div>
+                  <fieldset className="space-y-6">
+                    <legend className="font-serif text-charcoal mb-4" style={{ fontSize: 22, fontWeight: 500 }}>
+                      About you
+                    </legend>
+                    <Field label="Full name" required error={stage1.formState.errors.full_name}>
+                      <input type="text" {...stage1.register('full_name')} className={inputBase} autoComplete="name" />
+                    </Field>
+                    <Field label="Email" required error={stage1.formState.errors.email} help="Personal email reaches you faster than a role-based one.">
+                      <input type="email" {...stage1.register('email')} className={inputBase} autoComplete="email" />
+                    </Field>
+                  </fieldset>
+
+                  <fieldset className="space-y-6">
+                    <legend className="font-serif text-charcoal mb-4" style={{ fontSize: 22, fontWeight: 500 }}>
+                      The property
+                    </legend>
+                    <Field label="Street address" required error={stage1.formState.errors.property_street}>
+                      <input type="text" {...stage1.register('property_street')} className={inputBase} autoComplete="address-line1" />
+                    </Field>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <Field label="City" required error={stage1.formState.errors.property_city}>
+                        <input type="text" {...stage1.register('property_city')} className={inputBase} autoComplete="address-level2" />
+                      </Field>
+                      <Field label="State" required error={stage1.formState.errors.property_state}>
+                        <select {...stage1.register('property_state')} className={inputBase} defaultValue="">
+                          <option value="" disabled>Select…</option>
+                          {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </Field>
+                      <Field label="ZIP" required error={stage1.formState.errors.property_zip}>
+                        <input type="text" {...stage1.register('property_zip')} className={inputBase} autoComplete="postal-code" maxLength={5} />
+                      </Field>
+                    </div>
+                    <Field label="Bedrooms" required error={stage1.formState.errors.property_bedrooms}>
+                      <select {...stage1.register('property_bedrooms')} className={inputBase} defaultValue="">
+                        <option value="" disabled>Select…</option>
+                        {[1,2,3,4,5,6,7,8,9].map((n) => (
+                          <option key={n} value={n}>{n === 9 ? '8+' : n}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  </fieldset>
+
+                  {submitError && (
+                    <div className="border border-red-300 bg-red-50 px-4 py-3 font-sans text-red-800 text-sm">
+                      {submitError}
+                    </div>
+                  )}
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full sm:w-auto font-sans text-xs font-medium tracking-widest uppercase px-10 py-4 bg-charcoal text-ivory hover:bg-brass transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submitting ? 'Submitting…' : 'Get My Free Audit →'}
+                    </button>
+                    <p className="mt-4 font-sans text-mid-charcoal/55" style={{ fontSize: 13 }}>
+                      Your information is kept confidential. We never share, sell, or syndicate your property data.
+                    </p>
+                  </div>
+                </form>
               )}
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full sm:w-auto font-sans text-xs font-medium tracking-widest uppercase px-10 py-4 bg-charcoal text-ivory hover:bg-brass transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? 'Submitting…' : 'Get My Free Audit →'}
-                </button>
-                <p className="mt-4 font-sans text-mid-charcoal/55" style={{ fontSize: 13 }}>
-                  Your information is kept confidential. We never share, sell, or syndicate your property data.
-                </p>
-              </div>
-              </form>
+              {/* ── STAGE 2 — enrichment (all optional) ── */}
+              {step === 2 && (
+                <>
+                  <div className="border border-brass/40 bg-brass/5 px-5 py-4 mb-10 font-sans text-charcoal text-sm">
+                    <strong>Got it{captured?.full_name ? `, ${captured.full_name.split(' ')[0]}` : ''}.</strong> Your audit
+                    request is in — we'll have the written report back within 48 hours.
+                  </div>
+
+                  <form onSubmit={stage2.handleSubmit(onEnrich)} className="space-y-10" noValidate>
+                    {/* Honeypot */}
+                    <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }}>
+                      <label>Company legal name (do not fill)
+                        <input type="text" tabIndex={-1} autoComplete="off" {...stage2.register('_company_legal_name')} />
+                      </label>
+                    </div>
+
+                    <fieldset className="space-y-6">
+                      <legend className="font-serif text-charcoal mb-2" style={{ fontSize: 22, fontWeight: 500 }}>
+                        Sharpen your audit
+                      </legend>
+                      <p className="font-sans text-mid-charcoal/70 text-sm -mt-2 mb-2">
+                        Every answer helps — but skip anything you're unsure about.
+                      </p>
+
+                      <Field
+                        label="Phone (optional)"
+                        error={stage2.formState.errors.phone}
+                        help="US/CA — any format works (e.g. 813-555-1234)."
+                      >
+                        <input
+                          type="tel"
+                          {...stage2.register('phone')}
+                          className={inputBase}
+                          autoComplete="tel"
+                          placeholder="(813) 555-1234"
+                        />
+                      </Field>
+
+                      <Field label="Bathrooms (optional)" error={stage2.formState.errors.property_bathrooms}>
+                        <select {...stage2.register('property_bathrooms')} className={inputBase} defaultValue="">
+                          <option value="">—</option>
+                          {[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,9].map((n) => (
+                            <option key={n} value={n}>{n === 9 ? '8+' : n}</option>
+                          ))}
+                        </select>
+                      </Field>
+
+                      <Field label="Currently listed on Airbnb / VRBO?" error={stage2.formState.errors.is_listed}>
+                        <div className="flex flex-wrap gap-6">
+                          {IS_LISTED_OPTIONS.map((opt) => (
+                            <label key={opt} className="flex items-center gap-2 font-sans text-charcoal cursor-pointer">
+                              <input type="radio" value={opt} {...stage2.register('is_listed')} className="accent-brass" />
+                              <span>{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </Field>
+                      {isListed === 'Yes' && (
+                        <Field label="Listing URL" error={stage2.formState.errors.listing_url}>
+                          <input
+                            type="url"
+                            {...stage2.register('listing_url')}
+                            className={inputBase}
+                            placeholder="https://www.airbnb.com/rooms/..."
+                          />
+                        </Field>
+                      )}
+
+                      <Field label="Primary goal (optional)" error={stage2.formState.errors.primary_goal}>
+                        <select {...stage2.register('primary_goal')} className={inputBase} defaultValue="">
+                          <option value="">—</option>
+                          {PRIMARY_GOAL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                      </Field>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Field label="Target ADR (optional)" error={stage2.formState.errors.target_adr} help="USD per night. Leave blank if unsure.">
+                          <input type="number" min="50" max="2000" {...stage2.register('target_adr')} className={inputBase} placeholder="350" />
+                        </Field>
+                        <Field label="Current performance (optional)" error={stage2.formState.errors.current_performance}>
+                          <select {...stage2.register('current_performance')} className={inputBase} defaultValue="">
+                            <option value="">—</option>
+                            {CURRENT_PERFORMANCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
+                        </Field>
+                      </div>
+                      <Field label="Budget tier (optional)" error={stage2.formState.errors.budget_tier}>
+                        <select {...stage2.register('budget_tier')} className={inputBase} defaultValue="">
+                          <option value="">—</option>
+                          {BUDGET_TIER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                      </Field>
+                      <Field label="Timeline (optional)" error={stage2.formState.errors.timeline}>
+                        <select {...stage2.register('timeline')} className={inputBase} defaultValue="">
+                          <option value="">—</option>
+                          {TIMELINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                      </Field>
+                      <Field label="Anything else? (optional)" error={stage2.formState.errors.notes}>
+                        <textarea
+                          {...stage2.register('notes')}
+                          className={inputBase}
+                          rows={4}
+                          maxLength={1000}
+                          placeholder="Refinance plans, exit timeline, design preferences, partnership structure — anything that helps us frame the audit."
+                        />
+                      </Field>
+                    </fieldset>
+
+                    <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-4">
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full sm:w-auto font-sans text-xs font-medium tracking-widest uppercase px-10 py-4 bg-charcoal text-ivory hover:bg-brass transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {submitting ? 'Sending…' : 'Send These Details →'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/audit/requested')}
+                        disabled={submitting}
+                        className="font-sans text-sm text-mid-charcoal/70 underline hover:text-charcoal transition-colors disabled:opacity-50"
+                      >
+                        Skip — I'm done
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
             </div>
 
             <div className="hidden lg:block lg:sticky lg:top-32">
