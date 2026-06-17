@@ -70,25 +70,43 @@ const enumStrict = (values) =>
     message: `Must be one of: ${values.join(', ')}`,
   })
 
+// Personal-email gate, shared by capture + full schemas.
+const personalEmail = z
+  .string()
+  .email('Please enter a valid email')
+  .refine((v) => !ROLE_BASED_EMAIL_RX.test(v), {
+    message: "Please use a personal email — role-based addresses won't reach you.",
+  })
+
+// Optional US/CA phone → E.164. Behavior-identical to the original inline rule.
+const optionalPhone = z
+  .string()
+  .optional()
+  .transform((v) => (v || '').replace(/\D/g, ''))
+  .refine((digits) => digits === '' || digits.length === 10 || (digits.length === 11 && digits.startsWith('1')), {
+    message: 'Enter a 10-digit US/CA phone number',
+  })
+  .transform((digits) => (digits === '' ? '' : '+1' + (digits.length === 11 ? digits.slice(1) : digits)))
+  .refine((e164) => e164 === '' || /^\+1[2-9]\d{9}$/.test(e164), {
+    message: 'Phone number area code must start with 2-9',
+  })
+
+const optionalTargetAdr = z
+  .union([z.literal(''), z.literal(undefined), z.coerce.number().int().min(50).max(2000)])
+  .optional()
+
+const optionalListingUrl = z
+  .string()
+  .optional()
+  .refine(
+    (v) => !v || /^https:\/\/(www\.)?(airbnb|vrbo|booking)\./.test(v),
+    { message: 'Must be an Airbnb, VRBO, or Booking.com URL' },
+  )
+
 export const auditFormSchema = z.object({
   full_name: z.string().min(2, 'Please enter your full name').max(80),
-  email: z
-    .string()
-    .email('Please enter a valid email')
-    .refine((v) => !ROLE_BASED_EMAIL_RX.test(v), {
-      message: "Please use a personal email — role-based addresses won't reach you.",
-    }),
-  phone: z
-    .string()
-    .optional()
-    .transform((v) => (v || '').replace(/\D/g, ''))
-    .refine((digits) => digits === '' || digits.length === 10 || (digits.length === 11 && digits.startsWith('1')), {
-      message: 'Enter a 10-digit US/CA phone number',
-    })
-    .transform((digits) => (digits === '' ? '' : '+1' + (digits.length === 11 ? digits.slice(1) : digits)))
-    .refine((e164) => e164 === '' || /^\+1[2-9]\d{9}$/.test(e164), {
-      message: 'Phone number area code must start with 2-9',
-    }),
+  email: personalEmail,
+  phone: optionalPhone,
   property_street: z.string().min(5, 'Street address required'),
   property_city: z.string().min(2, 'City required'),
   property_state: enumStrict(US_STATES),
@@ -96,17 +114,9 @@ export const auditFormSchema = z.object({
   property_bedrooms: z.coerce.number().int().min(1).max(9),
   property_bathrooms: z.coerce.number().min(1).max(9),
   is_listed: enumStrict(IS_LISTED_OPTIONS),
-  listing_url: z
-    .string()
-    .optional()
-    .refine(
-      (v) => !v || /^https:\/\/(www\.)?(airbnb|vrbo|booking)\./.test(v),
-      { message: 'Must be an Airbnb, VRBO, or Booking.com URL' },
-    ),
+  listing_url: optionalListingUrl,
   primary_goal: enumStrict(PRIMARY_GOAL_VALUES),
-  target_adr: z
-    .union([z.literal(''), z.literal(undefined), z.coerce.number().int().min(50).max(2000)])
-    .optional(),
+  target_adr: optionalTargetAdr,
   current_performance: enumOrEmpty(CURRENT_PERFORMANCE_VALUES).optional(),
   budget_tier: enumStrict(BUDGET_TIER_VALUES),
   timeline: enumStrict(TIMELINE_VALUES),
@@ -116,3 +126,45 @@ export const auditFormSchema = z.object({
   (data) => data.is_listed !== 'Yes' || (!!data.listing_url && data.listing_url.length > 0),
   { message: 'Listing URL required when "Currently listed" is Yes', path: ['listing_url'] },
 )
+
+// ── Progressive two-stage form ──────────────────────────────────────────────
+// Stage 1 is the conversion event: the minimum we need to own the lead. Six
+// logical fields (name, email, the address block, bedrooms). On submit we
+// create the HubSpot contact + fire the Lead pixel — the lead is ours even if
+// they never finish Stage 2.
+export const auditStage1Schema = z.object({
+  full_name: z.string().min(2, 'Please enter your full name').max(80),
+  email: personalEmail,
+  property_street: z.string().min(5, 'Street address required'),
+  property_city: z.string().min(2, 'City required'),
+  property_state: enumStrict(US_STATES),
+  property_zip: z.string().regex(/^\d{5}$/, '5-digit ZIP'),
+  property_bedrooms: z.coerce.number().int().min(1).max(9),
+  _company_legal_name: z.string().max(0).optional(),
+})
+
+// Stage 2 enriches the already-captured contact. Everything is optional — a
+// bail here is a captured lead we follow up with, not a lost one. email +
+// full_name are carried from Stage 1 to locate/label the contact and deal.
+export const auditEnrichmentSchema = z
+  .object({
+    email: personalEmail,
+    full_name: z.string().min(2).max(80).optional(),
+    phone: optionalPhone,
+    property_bathrooms: z
+      .union([z.literal(''), z.literal(undefined), z.coerce.number().min(1).max(9)])
+      .optional(),
+    is_listed: enumOrEmpty(IS_LISTED_OPTIONS).optional(),
+    listing_url: optionalListingUrl,
+    primary_goal: enumOrEmpty(PRIMARY_GOAL_VALUES).optional(),
+    target_adr: optionalTargetAdr,
+    current_performance: enumOrEmpty(CURRENT_PERFORMANCE_VALUES).optional(),
+    budget_tier: enumOrEmpty(BUDGET_TIER_VALUES).optional(),
+    timeline: enumOrEmpty(TIMELINE_VALUES).optional(),
+    notes: z.string().max(1000).optional(),
+    _company_legal_name: z.string().max(0).optional(),
+  })
+  .refine(
+    (data) => data.is_listed !== 'Yes' || (!!data.listing_url && data.listing_url.length > 0),
+    { message: 'Listing URL required when "Currently listed" is Yes', path: ['listing_url'] },
+  )
