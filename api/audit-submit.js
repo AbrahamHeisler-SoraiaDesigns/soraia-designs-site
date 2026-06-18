@@ -94,14 +94,23 @@ async function fireMetaCAPI(payload, eventId, clientIp, userAgent) {
     return { skipped: true, reason: 'missing_token' }
   }
   const phoneDigits = (payload.phone || '').replace(/\D/g, '')
+  const norm = (v) => String(v || '').trim().toLowerCase()
+  const email = norm(payload.email)
   const userData = {
-    em: [sha256Hex(payload.email)],
+    em: email ? [sha256Hex(email)] : undefined,
     ph: phoneDigits ? [sha256Hex(phoneDigits)] : undefined,
     client_ip_address: clientIp,
     client_user_agent: userAgent,
   }
+  // Stronger match keys → lets Meta attribute the lead to the ad click instead
+  // of falling back to weaker view-through attribution.
+  if (email) userData.external_id = [sha256Hex(email)]
+  if (payload.firstname) userData.fn = [sha256Hex(norm(payload.firstname))]
+  if (payload.lastname) userData.ln = [sha256Hex(norm(payload.lastname))]
   if (payload.fbp) userData.fbp = payload.fbp
+  // fbc carries the ad-click id; synthesize from fbclid if the client couldn't.
   if (payload.fbc) userData.fbc = payload.fbc
+  else if (payload.fbclid) userData.fbc = `fb.1.${Date.now()}.${payload.fbclid}`
 
   const body = {
     data: [{

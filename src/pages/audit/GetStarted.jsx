@@ -23,6 +23,11 @@ function getUtmAndAttribution() {
     const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]+)'))
     return m ? decodeURIComponent(m[1]) : ''
   }
+  // Synthesize the click-id (_fbc) from fbclid when the pixel hasn't set the
+  // cookie yet — without it, ad leads can only attribute view-through, not click.
+  const fbclid = get('fbclid')
+  let fbc = cookie('_fbc')
+  if (!fbc && fbclid) fbc = `fb.1.${Date.now()}.${fbclid}`
   return {
     utm_source: get('utm_source'),
     utm_medium: get('utm_medium'),
@@ -32,8 +37,9 @@ function getUtmAndAttribution() {
     referrer: document.referrer || '',
     landing_page: window.location.href,
     gclid: get('gclid'),
+    fbclid,
     fbp: cookie('_fbp'),
-    fbc: cookie('_fbc'),
+    fbc,
     hubspotutk: cookie('hubspotutk'),
   }
 }
