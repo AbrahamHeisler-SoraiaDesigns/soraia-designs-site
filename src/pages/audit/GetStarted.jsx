@@ -76,16 +76,26 @@ export default function AuditGetStarted() {
 
   const stage1 = useForm({
     resolver: zodResolver(auditStage1Schema),
+    defaultValues: { is_listed: 'Yes' },
     mode: 'onBlur',
   })
 
   const stage2 = useForm({
     resolver: zodResolver(auditEnrichmentSchema),
-    defaultValues: { is_listed: 'No' },
     mode: 'onBlur',
   })
 
-  const isListed = stage2.watch('is_listed')
+  // Drives the property-link helper copy + placeholder. Listed → live Airbnb/VRBO
+  // (performance audit); Not-yet / coming-soon → Zillow/Realtor/Redfin (launch audit).
+  const isListed = stage1.watch('is_listed')
+  const linkHelp =
+    isListed === 'Yes'
+      ? 'Listed? Paste your Airbnb or VRBO link so we can pull live performance.'
+      : "Not live yet? A Zillow, Realtor.com, or Redfin link works — we just need eyes on the property."
+  const linkPlaceholder =
+    isListed === 'Yes'
+      ? 'https://www.airbnb.com/rooms/...'
+      : 'https://www.zillow.com/homedetails/...'
 
   // Stage 1 — the conversion event. Capture the lead server-side, fire the
   // Lead pixel, then advance to the optional enrichment step.
@@ -229,6 +239,31 @@ export default function AuditGetStarted() {
                         ))}
                       </select>
                     </Field>
+
+                    <Field label="Currently listed on Airbnb / VRBO?" required error={stage1.formState.errors.is_listed}>
+                      <div className="flex flex-wrap gap-6">
+                        {IS_LISTED_OPTIONS.map((opt) => (
+                          <label key={opt} className="flex items-center gap-2 font-sans text-charcoal cursor-pointer">
+                            <input type="radio" value={opt} {...stage1.register('is_listed')} className="accent-brass" />
+                            <span>{opt}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </Field>
+
+                    <Field label="Property link" required error={stage1.formState.errors.listing_url} help={linkHelp}>
+                      <input
+                        type="url"
+                        {...stage1.register('listing_url')}
+                        className={inputBase}
+                        placeholder={linkPlaceholder}
+                      />
+                      <p className="font-sans text-mid-charcoal/55 text-sm mt-2">
+                        No link yet? Email your photos to{' '}
+                        <a href="mailto:audit@soraiadesigns.com" className="underline hover:text-charcoal">audit@soraiadesigns.com</a>{' '}
+                        and we'll build from those.
+                      </p>
+                    </Field>
                   </fieldset>
 
                   {submitError && (
@@ -298,27 +333,6 @@ export default function AuditGetStarted() {
                           ))}
                         </select>
                       </Field>
-
-                      <Field label="Currently listed on Airbnb / VRBO?" error={stage2.formState.errors.is_listed}>
-                        <div className="flex flex-wrap gap-6">
-                          {IS_LISTED_OPTIONS.map((opt) => (
-                            <label key={opt} className="flex items-center gap-2 font-sans text-charcoal cursor-pointer">
-                              <input type="radio" value={opt} {...stage2.register('is_listed')} className="accent-brass" />
-                              <span>{opt}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </Field>
-                      {isListed === 'Yes' && (
-                        <Field label="Listing URL" error={stage2.formState.errors.listing_url}>
-                          <input
-                            type="url"
-                            {...stage2.register('listing_url')}
-                            className={inputBase}
-                            placeholder="https://www.airbnb.com/rooms/..."
-                          />
-                        </Field>
-                      )}
 
                       <Field label="Primary goal (optional)" error={stage2.formState.errors.primary_goal}>
                         <select {...stage2.register('primary_goal')} className={inputBase} defaultValue="">

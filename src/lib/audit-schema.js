@@ -95,13 +95,24 @@ const optionalTargetAdr = z
   .union([z.literal(''), z.literal(undefined), z.coerce.number().int().min(50).max(2000)])
   .optional()
 
+// Property link. We recognize the common STR + real-estate hosts, but also
+// accept any well-formed http(s) URL (MLS/other) so an unusual-but-valid link
+// isn't hard-bounced — validate format, don't over-restrict host.
+const isHttpUrl = (v) => /^https?:\/\/[^\s.]+\.[^\s]+$/i.test(String(v || '').trim())
+const LISTING_URL_MESSAGE =
+  'Enter a valid property link — Airbnb, VRBO, Zillow, Realtor.com, Redfin, or any listing URL.'
+
+// Required at the Stage-1 gate: every submission must carry a usable property link.
+const requiredListingUrl = z
+  .string()
+  .trim()
+  .min(1, 'A property link is required')
+  .refine(isHttpUrl, { message: LISTING_URL_MESSAGE })
+
 const optionalListingUrl = z
   .string()
   .optional()
-  .refine(
-    (v) => !v || /^https:\/\/(www\.)?(airbnb|vrbo|booking)\./.test(v),
-    { message: 'Must be an Airbnb, VRBO, or Booking.com URL' },
-  )
+  .refine((v) => !v || isHttpUrl(v), { message: LISTING_URL_MESSAGE })
 
 export const auditFormSchema = z.object({
   full_name: z.string().min(2, 'Please enter your full name').max(80),
@@ -140,31 +151,30 @@ export const auditStage1Schema = z.object({
   property_state: enumStrict(US_STATES),
   property_zip: z.string().regex(/^\d{5}$/, '5-digit ZIP'),
   property_bedrooms: z.coerce.number().int().min(1).max(9),
+  // A usable property link is the audit spine — required on every submission,
+  // regardless of is_listed. is_listed only branches the audit type + helper copy.
+  is_listed: enumStrict(IS_LISTED_OPTIONS),
+  listing_url: requiredListingUrl,
   _company_legal_name: z.string().max(0).optional(),
 })
 
 // Stage 2 enriches the already-captured contact. Everything is optional — a
 // bail here is a captured lead we follow up with, not a lost one. email +
 // full_name are carried from Stage 1 to locate/label the contact and deal.
-export const auditEnrichmentSchema = z
-  .object({
-    email: personalEmail,
-    full_name: z.string().min(2).max(80).optional(),
-    phone: optionalPhone,
-    property_bathrooms: z
-      .union([z.literal(''), z.literal(undefined), z.coerce.number().min(1).max(9)])
-      .optional(),
-    is_listed: enumOrEmpty(IS_LISTED_OPTIONS).optional(),
-    listing_url: optionalListingUrl,
-    primary_goal: enumOrEmpty(PRIMARY_GOAL_VALUES).optional(),
-    target_adr: optionalTargetAdr,
-    current_performance: enumOrEmpty(CURRENT_PERFORMANCE_VALUES).optional(),
-    budget_tier: enumOrEmpty(BUDGET_TIER_VALUES).optional(),
-    timeline: enumOrEmpty(TIMELINE_VALUES).optional(),
-    notes: z.string().max(1000).optional(),
-    _company_legal_name: z.string().max(0).optional(),
-  })
-  .refine(
-    (data) => data.is_listed !== 'Yes' || (!!data.listing_url && data.listing_url.length > 0),
-    { message: 'Listing URL required when "Currently listed" is Yes', path: ['listing_url'] },
-  )
+// is_listed + listing_url moved to the required Stage-1 gate, so they no
+// longer live here.
+export const auditEnrichmentSchema = z.object({
+  email: personalEmail,
+  full_name: z.string().min(2).max(80).optional(),
+  phone: optionalPhone,
+  property_bathrooms: z
+    .union([z.literal(''), z.literal(undefined), z.coerce.number().min(1).max(9)])
+    .optional(),
+  primary_goal: enumOrEmpty(PRIMARY_GOAL_VALUES).optional(),
+  target_adr: optionalTargetAdr,
+  current_performance: enumOrEmpty(CURRENT_PERFORMANCE_VALUES).optional(),
+  budget_tier: enumOrEmpty(BUDGET_TIER_VALUES).optional(),
+  timeline: enumOrEmpty(TIMELINE_VALUES).optional(),
+  notes: z.string().max(1000).optional(),
+  _company_legal_name: z.string().max(0).optional(),
+})

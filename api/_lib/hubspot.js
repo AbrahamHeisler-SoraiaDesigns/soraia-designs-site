@@ -75,6 +75,26 @@ export function monitoringPropsForSubmit(payload) {
   }
 }
 
+// Stage-1 writeback: monitoring props + the audit spine (property block, beds,
+// is_listed, and the now-required listing link). We PATCH these via the CRM API
+// on every Stage-1 submit so beds/street/link land in the custom audit_* props
+// even when the HubSpot Forms-API form definition maps street to standard
+// `address` or drops unmapped fields. Empty values are filtered so we never
+// blank a value the Forms API may have already set.
+export function stage1WritebackProps(payload) {
+  const core = {
+    ...monitoringPropsForSubmit(payload),
+    audit_property_street: payload.property_street || '',
+    audit_property_city: payload.property_city || '',
+    audit_property_state: payload.property_state || '',
+    audit_property_zip: payload.property_zip || '',
+    audit_property_bedrooms: payload.property_bedrooms != null ? String(payload.property_bedrooms) : '',
+    audit_is_listed: payload.is_listed || '',
+    audit_listing_url: payload.listing_url || '',
+  }
+  return Object.fromEntries(Object.entries(core).filter(([, v]) => v !== '' && v != null))
+}
+
 export function auditContactProps(payload) {
   return {
     email: payload.email,
@@ -156,7 +176,7 @@ export async function syncMonitoringPropsByEmail(email, payload) {
     if (contact?.id) break
   }
   if (!contact?.id) return null
-  const props = monitoringPropsForSubmit(payload)
+  const props = stage1WritebackProps(payload)
   await updateContact(contact.id, props)
   return { id: contact.id, ...contact, ...props }
 }
