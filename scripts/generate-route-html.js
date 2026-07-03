@@ -11,6 +11,28 @@ const baseHtml = readFileSync(join(distDir, 'index.html'), 'utf8')
 
 const routes = [
   {
+    path: 'privacy',
+    title: 'Privacy Policy | Soraia Designs',
+    description:
+      'Soraia Designs privacy policy — what information we collect, how we use it, and your choices, including our SMS text messaging program.',
+    canonical: 'https://www.soraiadesigns.com/privacy',
+    ogTitle: 'Privacy Policy | Soraia Designs',
+    ogDescription: 'What information Soraia Designs collects, how we use it, and your choices.',
+    ogUrl: 'https://www.soraiadesigns.com/privacy',
+    robots: 'index, follow',
+  },
+  {
+    path: 'terms',
+    title: 'SMS Terms of Service | Soraia Designs',
+    description:
+      'Soraia Designs SMS Terms of Service — program description, opt-in, message frequency, cost, and how to opt out.',
+    canonical: 'https://www.soraiadesigns.com/terms',
+    ogTitle: 'SMS Terms of Service | Soraia Designs',
+    ogDescription: 'Terms governing the Soraia Designs SMS text messaging program.',
+    ogUrl: 'https://www.soraiadesigns.com/terms',
+    robots: 'index, follow',
+  },
+  {
     path: 'audit',
     title: 'Free STR Property Audit | Soraia Designs',
     description:
