@@ -8,6 +8,28 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="facebook-domain-verification" content="epalyj2j6zljat4qrp2iv99iqc1r3d" />
+
+    <!-- Meta Pixel Code — fires PageView before any render-blocking resource below
+         (fonts CSS, HubSpot loader) so paid-traffic bounces before those load
+         still register a landing_page_view. Keep this the first script in <head>. -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '966166489104332');
+      fbq('track', 'PageView');
+    </script>
+    <!-- End Meta Pixel Code -->
+
+    <!-- HubSpot tracking — sets the hubspotutk cookie so the Forms API submit
+         can stitch each lead to its real first-touch source (portal 245704749). -->
+    <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/245704749.js"></script>
+
     <meta name="description" content="Short-term rental & Airbnb interior design for investors in Tampa Bay and beyond. Strategy-first design, sourcing, and procurement that drives bookings and 5-star reviews. Starting at $5,000." />
     <title>Short-Term Rental Interior Design | Soraia Designs — Tampa, FL</title>
     <link rel="canonical" href="https://www.soraiadesigns.com/" />
@@ -34,25 +56,6 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Caveat:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-
-    <!-- Meta Pixel Code -->
-    <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '966166489104332');
-      fbq('track', 'PageView');
-    </script>
-    <!-- End Meta Pixel Code -->
-
-    <!-- HubSpot tracking — sets the hubspotutk cookie so the Forms API submit
-         can stitch each lead to its real first-touch source (portal 245704749). -->
-    <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/245704749.js"></script>
 
     <!-- Structured Data: LocalBusiness -->
     <script type="application/ld+json">
