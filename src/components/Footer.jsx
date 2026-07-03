@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 function InstagramIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -139,6 +141,22 @@ export default function Footer() {
           <p className="font-sans text-stone/40" style={{ fontSize: 13 }}>
             © {year} Soraia Designs. All rights reserved.
           </p>
+          <div className="flex items-center gap-5">
+            <Link
+              to="/privacy"
+              className="font-sans text-stone/40 hover:text-brass transition-colors duration-200"
+              style={{ fontSize: 12 }}
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              to="/terms"
+              className="font-sans text-stone/40 hover:text-brass transition-colors duration-200"
+              style={{ fontSize: 12 }}
+            >
+              SMS Terms
+            </Link>
+          </div>
           <p className="font-sans text-stone/30" style={{ fontSize: 12 }}>
             Short-Term Rental &amp; Airbnb Interior Design · Tampa, FL
           </p>
