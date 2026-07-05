@@ -4,14 +4,20 @@
 import { readFileSync, mkdirSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { prerenderLegalRoutes } from './prerender-legal.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const distDir = join(__dirname, '..', 'dist')
 const baseHtml = readFileSync(join(distDir, 'index.html'), 'utf8')
 
+// SSR the legal pages so their policy text lives in the raw HTML response
+// (Twilio's A2P verifier does a no-JS GET — see prerender-legal.js).
+const prerendered = await prerenderLegalRoutes(['/privacy', '/terms'])
+
 const routes = [
   {
     path: 'privacy',
+    prerender: '/privacy',
     title: 'Privacy Policy | Soraia Designs',
     description:
       'Soraia Designs privacy policy — what information we collect, how we use it, and your choices, including our SMS text messaging program.',
@@ -23,6 +29,7 @@ const routes = [
   },
   {
     path: 'terms',
+    prerender: '/terms',
     title: 'SMS Terms of Service | Soraia Designs',
     description:
       'Soraia Designs SMS Terms of Service — program description, opt-in, message frequency, cost, and how to opt out.',
@@ -111,10 +118,19 @@ for (const route of routes) {
     `<meta property="og:url" content="${route.ogUrl}"`
   )
 
+  // Inject SSR markup into #root so the page text is in the raw HTML.
+  // React (createRoot) replaces this on boot, so humans still get the live
+  // app; only no-JS crawlers ever read the injected copy.
+  if (route.prerender) {
+    const markup = prerendered[route.prerender]
+    if (!markup) throw new Error(`Missing prerender for ${route.prerender}`)
+    html = html.replace('<div id="root"></div>', `<div id="root">${markup}</div>`)
+  }
+
   const outDir = join(distDir, route.path)
   mkdirSync(outDir, { recursive: true })
   writeFileSync(join(outDir, 'index.html'), html, 'utf8')
-  console.log(`✓ dist/${route.path}/index.html`)
+  console.log(`✓ dist/${route.path}/index.html${route.prerender ? ' (prerendered)' : ''}`)
 }
 
 console.log('Route HTML generation complete.')

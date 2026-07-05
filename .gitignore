@@ -7,3 +7,6 @@ screenshots
 .env*.local
 .vercel
 .claude/
+
+# transient SSR bundle from scripts/prerender-legal.js
+scripts/.prerender-legal.*.cjs
