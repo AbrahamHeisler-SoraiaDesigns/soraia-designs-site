@@ -22,6 +22,13 @@ const TIMELINE_VALUES = [
 ]
 export const IS_LISTED_OPTIONS = ['Yes', 'No', 'Coming soon']
 
+// A2P-registered verbatim consent language (7/7-verified). COMPLIANCE-LOCKED —
+// must match the registered opt-in exactly. Do NOT humanize, reword, or add an
+// em dash. Rendered as the SMS-consent checkbox label on the audit form and
+// stored verbatim on the contact for the consent audit trail.
+export const SMS_CONSENT_LABEL =
+  'I agree to receive text messages from Soraia Designs about my inquiry. Msg frequency varies, and msg & data rates may apply. Reply STOP to opt out or HELP for help.'
+
 export const PRIMARY_GOAL_OPTIONS = [
   { value: 'increase_adr',       label: 'Raise nightly rate' },
   { value: 'increase_occupancy', label: 'Improve occupancy' },
@@ -167,6 +174,11 @@ export const auditEnrichmentSchema = z.object({
   email: personalEmail,
   full_name: z.string().min(2).max(80).optional(),
   phone: optionalPhone,
+  // Optional SMS opt-in. Unchecked by default. The label shown to the user is
+  // the A2P-registered verbatim consent language (see SMS_CONSENT_LABEL). Only
+  // meaningful when a phone number is also provided; the backend records the
+  // consent + timestamp + verbatim text for the compliance audit trail.
+  sms_consent: z.boolean().optional(),
   property_bathrooms: z
     .union([z.literal(''), z.literal(undefined), z.coerce.number().min(1).max(9)])
     .optional(),

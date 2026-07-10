@@ -79,7 +79,7 @@ export default function AuditRequested() {
               className="font-sans text-mid-charcoal/75 leading-relaxed"
               style={{ fontSize: 16 }}
             >
-              We'll cover where you sit in your market, what the top comps are doing differently, the revenue math at three rate bands, and an honest budget read on what gets you there — written specifically for your property.
+              We'll cover where you sit in your market, what the top comps are doing differently, the revenue math at three rate bands, and an honest budget read on what gets you there. Written specifically for your property.
             </motion.p>
           </div>
         </section>
@@ -104,31 +104,39 @@ export default function AuditRequested() {
           </div>
         </section>
 
-        {/* Calendly inline */}
+        {/* Speed-to-lead fast-path — book the strategy call NOW, while intent is
+            hot. The audit is the deliverable at/after the call, not the gate
+            before it. Calendly = str-consult, tagged utm_medium=audit-fastpath so
+            fast-path books are distinguishable from SMS-booked + email-booked.
+            Copy = Maya's v2 draft (2026-07-09-funnel-relaunch-copy.md §1), em
+            dashes removed per the Soraia copy rule. DRAFT pending Abe sign-off. */}
         <section className="px-6 lg:px-12 py-16 lg:py-24" style={{ backgroundColor: '#0D0D0D' }}>
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
-              <p className="section-label text-stone/60 mb-4">Skip the wait</p>
+              <p className="section-label text-stone/60 mb-4">While we build your audit</p>
               <h2
                 className="font-serif text-ivory mb-6"
                 style={{ fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 400 }}
               >
-                Book your audit review call <em className="not-italic font-medium">now</em>.
+                Book your 15-minute call <em className="not-italic font-medium">now</em>.
               </h2>
               <p className="font-sans text-stone/75 max-w-2xl mx-auto leading-relaxed" style={{ fontSize: 16 }}>
-                If you'd rather walk through your audit together when it's ready, lock in your audit review / next steps call now. Calendar fills up first.
+                Here's the move most owners make: book your 15-minute call now, while slots are open. The audit shows you what's costing you. The call is where Abraham walks through the fix, built around your actual numbers. Put it on the calendar for the week your audit arrives.
               </p>
             </div>
             <div className="bg-ivory" style={{ minHeight: 720 }}>
               <iframe
-                title="Book your audit review / next steps call with Soraia Designs"
-                src="https://calendly.com/soraiadesigns/str-design-audit-review?hide_gdpr_banner=1"
+                title="Book your 15-minute strategy call with Soraia Designs"
+                src="https://calendly.com/soraiadesigns/str-consult?hide_gdpr_banner=1&utm_source=audit&utm_medium=audit-fastpath&utm_campaign=audit-relaunch-2026-07"
                 width="100%"
                 height="720"
                 frameBorder="0"
                 loading="lazy"
               />
             </div>
+            <p className="text-center font-sans text-stone/60 mt-6" style={{ fontSize: 14 }}>
+              Can't find a time today? Your audit's already on its way regardless.
+            </p>
             <div className="text-center mt-8">
               <Link
                 to="/"
