@@ -36,6 +36,11 @@ function authorized(req, bodyKey) {
 
 const isHttpUrl = (v) => /^https?:\/\/[^\s.]+\.[^\s]+$/i.test(String(v || '').trim())
 
+// Escape every user-controlled value before it lands in an HTML response.
+const esc = (v) => String(v ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+
 function jsonBody(req) {
   if (!req.body) return {}
   if (typeof req.body === 'string') return JSON.parse(req.body)
@@ -58,13 +63,13 @@ function page(title, body) {
 }
 
 function formBody(key, prefill = {}) {
-  const email = prefill.email ? String(prefill.email).replace(/"/g, '&quot;') : ''
+  const email = esc(prefill.email || '')
   return `
     <h1>Deliver audit &rarr; release nurture</h1>
     <p>Paste the contact's email and the published audit URL (here.now link). This flips
        <code>audit_status</code> to <code>delivered</code> and releases the next nurture email.</p>
     <form method="POST" action="/api/audit-deliver">
-      <input type="hidden" name="key" value="${String(key).replace(/"/g, '&quot;')}"/>
+      <input type="hidden" name="key" value="${esc(key)}"/>
       <label>Contact email</label>
       <input type="email" name="email" required value="${email}" placeholder="owner@example.com"/>
       <label>Published audit URL</label>
@@ -117,32 +122,40 @@ export default async function handler(req, res) {
       : res.status(400).json({ ok: false, message: msg })
   }
 
-  const contact = await findContactByEmail(email)
+  let contact
+  try {
+    contact = await findContactByEmail(email)
+  } catch (error) {
+    const msg = `HubSpot lookup failed: ${String(error)}`
+    return wantsHtml
+      ? res.status(502).send(page('Lookup failed', `<h1 class="err">Lookup failed</h1><p>${esc(msg)}</p>${formBody(body.key, { email })}`))
+      : res.status(502).json({ ok: false, message: msg })
+  }
   if (!contact?.id) {
     const msg = `No HubSpot contact found for ${email}.`
     return wantsHtml
-      ? res.status(404).send(page('Not found', `<h1 class="err">Not found</h1><p>${msg}</p>${formBody(body.key)}`))
+      ? res.status(404).send(page('Not found', `<h1 class="err">Not found</h1><p>No HubSpot contact found for <strong>${esc(email)}</strong>.</p>${formBody(body.key)}`))
       : res.status(404).json({ ok: false, message: msg })
   }
 
   // 1) Flip delivery state — the two fields nextEmailKey() gates email 2 on.
-  await updateContact(contact.id, {
-    audit_status: 'delivered',
-    audit_pdf_url: auditPdfUrl,
-  })
-
   // 2) Release the next nurture email. Re-derive from the (now-delivered) state
   //    rather than hardcoding email 2, so an unconfirmed or suppressed contact is
   //    handled correctly. sendNurtureEmail re-fetches fresh + self-guards.
   const merged = { ...contact, audit_status: 'delivered', audit_pdf_url: auditPdfUrl }
   const emailKey = nextEmailKey(merged)
   let released = null
-  if (emailKey) {
-    try {
-      released = await sendNurtureEmail(merged, emailKey)
-    } catch (error) {
-      released = { ok: false, error: String(error) }
-    }
+  try {
+    await updateContact(contact.id, {
+      audit_status: 'delivered',
+      audit_pdf_url: auditPdfUrl,
+    })
+    if (emailKey) released = await sendNurtureEmail(merged, emailKey)
+  } catch (error) {
+    const msg = `Delivery flip failed after contact lookup: ${String(error)}`
+    return wantsHtml
+      ? res.status(502).send(page('Flip failed', `<h1 class="err">Flip failed</h1><p>${esc(msg)}</p>`))
+      : res.status(502).json({ ok: false, message: msg, contactId: contact.id })
   }
 
   const contactUrl = buildContactUrl(contact.id)
@@ -163,11 +176,11 @@ export default async function handler(req, res) {
     const note = sent
       ? `Released <code>${emailKey}</code>.`
       : emailKey
-        ? `Next email <code>${emailKey}</code> was not sent (${released?.reason || released?.error || 'suppressed/guarded'}). Status still flipped; the daily cron will pick it up when eligible.`
+        ? `Next email <code>${esc(emailKey)}</code> was not sent (${esc(released?.reason || released?.error || 'suppressed/guarded')}). Status still flipped; the daily cron will pick it up when eligible.`
         : 'Contact is suppressed or terminal, so no email was released. Status flipped for reporting.'
     return res.status(200).send(page('Delivered', `
       <h1 class="ok">Audit marked delivered</h1>
-      <p><strong>${email}</strong> &rarr; <code>audit_status=delivered</code>. ${note}</p>
+      <p><strong>${esc(email)}</strong> &rarr; <code>audit_status=delivered</code>. ${note}</p>
       <p><a href="${contactUrl}" target="_blank" rel="noopener">Open the HubSpot contact &rarr;</a></p>
       <p><a href="/api/audit-deliver?key=${encodeURIComponent(body.key)}">Deliver another &rarr;</a></p>`))
   }
