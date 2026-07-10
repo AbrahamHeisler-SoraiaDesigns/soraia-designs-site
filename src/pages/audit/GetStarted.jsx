@@ -13,6 +13,7 @@ import {
   BUDGET_TIER_OPTIONS,
   TIMELINE_OPTIONS,
   IS_LISTED_OPTIONS,
+  SMS_CONSENT_LABEL,
 } from '../../lib/audit-schema'
 
 function getUtmAndAttribution() {
@@ -140,6 +141,9 @@ export default function AuditGetStarted() {
         ...data,
         email: captured?.email,
         full_name: captured?.full_name,
+        // When they opt in, carry the verbatim label so the backend can store
+        // the exact consent text shown for the compliance audit trail.
+        sms_consent_text: data.sms_consent ? SMS_CONSENT_LABEL : '',
         ...getUtmAndAttribution(),
         stage: 2,
       }
@@ -324,6 +328,24 @@ export default function AuditGetStarted() {
                           placeholder="(813) 555-1234"
                         />
                       </Field>
+
+                      {/* Optional SMS opt-in. Unchecked by default. Label is the
+                          A2P-registered verbatim consent language — do not edit. */}
+                      <div className="border border-stone/40 bg-white/60 px-4 py-4">
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            {...stage2.register('sms_consent')}
+                            className="accent-brass mt-1 shrink-0"
+                          />
+                          <span className="font-sans text-mid-charcoal leading-relaxed" style={{ fontSize: 14 }}>
+                            {SMS_CONSENT_LABEL}{' '}
+                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-charcoal">
+                              Privacy Policy
+                            </a>.
+                          </span>
+                        </label>
+                      </div>
 
                       <Field label="Bathrooms (optional)" error={stage2.formState.errors.property_bathrooms}>
                         <select {...stage2.register('property_bathrooms')} className={inputBase} defaultValue="">

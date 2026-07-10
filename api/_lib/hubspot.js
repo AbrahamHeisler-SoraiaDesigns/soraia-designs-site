@@ -141,6 +141,16 @@ export function enrichmentContactProps(payload) {
     audit_timeline: payload.timeline || '',
     audit_notes: payload.notes || '',
   }
+  // SMS opt-in: only write consent props on an actual opt-in (checkbox checked).
+  // Absence of an opt-in is never a recordable "no" here, so we don't clobber a
+  // prior consent on a later Stage-2 pass. Records verbatim text + source + ts
+  // for the A2P consent audit trail. This makes the lead textable by the setter.
+  if (payload.sms_consent === true) {
+    candidate.audit_sms_consent = 'true'
+    candidate.audit_sms_consent_at = isoNow()
+    candidate.audit_sms_consent_text = payload.sms_consent_text || ''
+    candidate.audit_sms_consent_source = 'web_audit_form'
+  }
   return Object.fromEntries(Object.entries(candidate).filter(([, v]) => v !== '' && v != null))
 }
 
