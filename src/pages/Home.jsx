@@ -9,6 +9,7 @@ import Process from '../components/Process'
 import Investment from '../components/Investment'
 import Testimonials from '../components/Testimonials'
 import About from '../components/About'
+import Hollywood from '../components/Hollywood'
 import FAQ from '../components/FAQ'
 import PhotoStrip from '../components/PhotoStrip'
 import FinalCTA from '../components/FinalCTA'
@@ -29,6 +30,7 @@ export default function Home() {
         <Investment />
         <Testimonials />
         <About />
+        <Hollywood />
         <FAQ />
         <PhotoStrip />
         <FinalCTA />
