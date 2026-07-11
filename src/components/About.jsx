@@ -9,30 +9,6 @@ export default function About() {
     <section id="about" className="bg-ivory pt-24 pb-8 px-6 lg:px-12">
       <div className="max-w-7xl mx-auto" ref={ref}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Photo placeholder */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={inView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="relative"
-          >
-            <div
-              className="w-full overflow-hidden"
-              style={{ aspectRatio: '3/4', maxHeight: 560 }}
-            >
-              <img
-                src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/DSC04377.jpg"
-                alt="Soraia Designs — family lifestyle shot with signature flamingo mural"
-                className="w-full h-full object-cover object-right"
-              />
-            </div>
-            {/* Brass accent corner */}
-            <div
-              className="absolute bottom-0 right-0 w-24 h-24 border-b-2 border-r-2 border-brass translate-x-4 translate-y-4"
-              aria-hidden="true"
-            />
-          </motion.div>
-
           {/* Text */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -65,6 +41,30 @@ export default function About() {
               </p>
             </div>
 
+          </motion.div>
+
+          {/* Photo */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={inView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="relative"
+          >
+            <div
+              className="w-full overflow-hidden"
+              style={{ aspectRatio: '3/4', maxHeight: 560 }}
+            >
+              <img
+                src="https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/DSC04377.jpg"
+                alt="Soraia Designs — family lifestyle shot with signature flamingo mural"
+                className="w-full h-full object-cover object-right"
+              />
+            </div>
+            {/* Brass accent corner */}
+            <div
+              className="absolute bottom-0 right-0 w-24 h-24 border-b-2 border-r-2 border-brass translate-x-4 translate-y-4"
+              aria-hidden="true"
+            />
           </motion.div>
         </div>
       </div>
