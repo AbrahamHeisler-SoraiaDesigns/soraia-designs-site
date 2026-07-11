@@ -2,6 +2,12 @@ const R2 = 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/'
 
 export const featuredProperties = [
   {
+    name: 'Coastal Luxury - Steps to Beach - Sleeps 10',
+    location: 'Surf City, NC',
+    href: 'https://www.airbnb.com/rooms/1687746803217682269',
+    image: '/assets/coastal-luxury-surf-city.jpg',
+  },
+  {
     name: 'Htd Pool, TikiHut, Pickleball, Golf',
     location: 'Bradenton, FL',
     href: 'https://www.airbnb.com/rooms/1645180040509444846',
