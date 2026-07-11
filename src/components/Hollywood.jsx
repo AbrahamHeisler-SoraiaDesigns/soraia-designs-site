@@ -42,7 +42,7 @@ export default function Hollywood() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="relative lg:sticky lg:top-24"
           >
-            <div className="w-full overflow-hidden aspect-[2/3] max-w-md mx-auto lg:mx-0">
+            <div className="w-full overflow-hidden aspect-[4/5] max-w-md mx-auto lg:mx-0">
               <picture>
                 <source
                   type="image/webp"
@@ -55,7 +55,7 @@ export default function Hollywood() {
                   sizes="(min-width: 1024px) 480px, 90vw"
                   alt="Soraia Malaquias, founder of Soraia Designs"
                   loading="lazy"
-                  className="w-full h-full object-cover object-top"
+                  className="w-full h-full object-cover"
                 />
               </picture>
             </div>
