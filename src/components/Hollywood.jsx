@@ -8,7 +8,14 @@ function CreditCard({ title, year, role, image }) {
       className="relative flex-shrink-0 w-full aspect-[2/3] overflow-hidden border border-stone bg-charcoal flex flex-col justify-end p-4"
     >
       {image ? (
-        <img src={image} alt={`${title} poster`} className="absolute inset-0 w-full h-full object-cover" />
+        <>
+          <img src={image} alt={`${title} poster`} className="absolute inset-0 w-full h-full object-cover" />
+          <div
+            className="absolute inset-x-0 bottom-0 h-2/3"
+            style={{ background: 'linear-gradient(to top, rgba(13,13,13,0.95), rgba(13,13,13,0.55) 55%, transparent)' }}
+            aria-hidden="true"
+          />
+        </>
       ) : (
         <span className="absolute top-3 right-3 w-1.5 h-1.5 bg-brass rounded-full" aria-hidden="true" />
       )}
