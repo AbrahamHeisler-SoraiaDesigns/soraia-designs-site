@@ -1,6 +1,6 @@
 import { auditStage1Schema, auditEnrichmentSchema } from '../src/lib/audit-schema.js'
 import { DEFAULT_PIXEL_ID, EMAIL_KEYS, HUBSPOT_PORTAL_ID } from './_lib/audit-config.js'
-import { buildContactUrl, enrichAuditContactByEmail, findContactByEmail, syncMonitoringPropsByEmail, updateContact, upsertAuditContactByEmail, upsertAuditDeal } from './_lib/hubspot.js'
+import { buildContactUrl, enrichAuditContactByEmail, findContactByEmail, recordPhoneAbSignals, syncMonitoringPropsByEmail, updateContact, upsertAuditContactByEmail, upsertAuditDeal } from './_lib/hubspot.js'
 import { ensureAuditProspectDriveStructure } from './_lib/drive.js'
 import { syncLeadToBrevoAndMark } from './_lib/nurture.js'
 import { upsertBrevoAuditDeal } from './_lib/brevo.js'
@@ -216,6 +216,17 @@ export default async function handler(req, res) {
     } catch (error) {
       console.error('[audit-submit] stage-2 enrichment failed (non-blocking):', error)
     }
+    // Phone-capture A/B: record variant + whether a phone landed. Fully isolated
+    // from the enrichment write above so a missing measurement prop can't drop
+    // the qualifiers.
+    try {
+      await recordPhoneAbSignals(enrichData.email, {
+        variant: enrichData.phone_capture_variant,
+        phonePresent: !!(enrichData.phone && enrichData.phone.length > 0),
+      })
+    } catch (error) {
+      console.error('[audit-submit] phone A/B signal (stage 2) failed (non-blocking):', error)
+    }
     return res.status(200).json({
       ok: true,
       stage: 2,
@@ -298,6 +309,17 @@ export default async function handler(req, res) {
       } catch (secondary) {
         console.error('[audit-submit] failed to mark HubSpot sync error:', secondary)
       }
+    }
+  }
+
+  // Phone-capture A/B: stamp the variant at capture so every Stage-1 lead (the
+  // measurement denominator) carries it, even the ones who never reach Stage 2.
+  // Best-effort + isolated — never blocks the lead.
+  if (contact?.id && merged.phone_capture_variant) {
+    try {
+      await recordPhoneAbSignals(data.email, { variant: merged.phone_capture_variant })
+    } catch (error) {
+      console.error('[audit-submit] phone A/B signal (stage 1) failed (non-blocking):', error)
     }
   }
 

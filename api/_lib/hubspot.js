@@ -155,7 +155,15 @@ export function enrichmentContactProps(payload) {
 }
 
 export async function enrichAuditContactByEmail(payload) {
-  const existing = await findContactByEmail(payload.email)
+  // Stage 2 can race ahead of the Stage-1 contact propagating in HubSpot search.
+  // Retry the lookup on the same 0/750/2000/5000ms backoff Stage 1 uses, so a
+  // fast finisher's qualifiers aren't silently dropped on a first-pass miss.
+  let existing = null
+  for (const delay of [0, 750, 2000, 5000]) {
+    if (delay) await wait(delay)
+    existing = await findContactByEmail(payload.email)
+    if (existing?.id) break
+  }
   if (!existing?.id) return null
   const props = enrichmentContactProps(payload)
   if (Object.keys(props).length === 0) return { id: existing.id, ...existing, updated: false }
@@ -189,6 +197,28 @@ export async function syncMonitoringPropsByEmail(email, payload) {
   const props = stage1WritebackProps(payload)
   await updateContact(contact.id, props)
   return { id: contact.id, ...contact, ...props }
+}
+
+// Phone-capture A/B (2026-07-10): record which variant the user saw and whether
+// a phone landed, WITHOUT ever touching the core lead path. Isolated + fully
+// best-effort: its own lookup + PATCH in a try/catch, so if the two measurement
+// props (`audit_phone_capture_variant`, `audit_phone_present`) don't exist in
+// the portal yet, the 400 is swallowed here and Stage-1 nurture is unaffected.
+// Once Maya creates the props, data starts flowing with no code change.
+export async function recordPhoneAbSignals(email, { variant, phonePresent } = {}) {
+  const props = {}
+  if (variant) props.audit_phone_capture_variant = String(variant)
+  if (phonePresent != null) props.audit_phone_present = phonePresent ? 'true' : 'false'
+  if (Object.keys(props).length === 0) return null
+  try {
+    const contact = await findContactByEmail(email)
+    if (!contact?.id) return null
+    await updateContact(contact.id, props)
+    return { id: contact.id, ...props }
+  } catch (error) {
+    console.warn('[hubspot] recordPhoneAbSignals skipped (props may not exist yet):', error?.message || error)
+    return null
+  }
 }
 
 export async function searchContactsForNurture() {
