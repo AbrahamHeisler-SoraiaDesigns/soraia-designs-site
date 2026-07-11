@@ -69,7 +69,26 @@ export default function AuditGetStarted() {
   const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [phoneErr, setPhoneErr] = useState('') // variant-B required-phone message (controlled)
   const [captured, setCaptured] = useState(null) // { full_name, email } carried into Stage 2
+
+  // Phone-capture A/B (2026-07-10). 'optional' = control (phone not required),
+  // 'required' = phone required to complete Stage 2. Assigned once, made sticky
+  // via localStorage so a reload/return keeps the same variant, then persisted
+  // to HubSpot at capture for measurement.
+  const [phoneVariant] = useState(() => {
+    if (typeof window === 'undefined') return 'optional'
+    try {
+      const saved = window.localStorage.getItem('audit_phone_variant')
+      if (saved === 'optional' || saved === 'required') return saved
+      const assigned = Math.random() < 0.5 ? 'optional' : 'required'
+      window.localStorage.setItem('audit_phone_variant', assigned)
+      return assigned
+    } catch {
+      return Math.random() < 0.5 ? 'optional' : 'required'
+    }
+  })
+  const phoneRequired = phoneVariant === 'required'
 
   useEffect(() => {
     document.title = 'Request Your Audit | Soraia Designs'
@@ -104,7 +123,7 @@ export default function AuditGetStarted() {
     setSubmitting(true)
     setSubmitError('')
     try {
-      const payload = { ...data, ...getUtmAndAttribution(), stage: 1 }
+      const payload = { ...data, ...getUtmAndAttribution(), phone_capture_variant: phoneVariant, stage: 1 }
       const res = await fetch('/api/audit-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -134,6 +153,16 @@ export default function AuditGetStarted() {
   // Stage 2 — enrich the captured lead. Best-effort: the lead is already ours,
   // so we route to the confirmation page even if enrichment hiccups.
   const onEnrich = async (data) => {
+    // Variant B (phone required): zod keeps phone optional server-side so a
+    // captured lead is never 400'd, so we enforce the required-ness on the
+    // client here with a controlled error (RHF setError is cleared by the
+    // resolver on submit). data.phone is already normalized to '' or E.164.
+    setPhoneErr('')
+    if (phoneRequired && !data.phone) {
+      setPhoneErr('Add a phone number so we can text your audit the moment it lands.')
+      stage2.setFocus('phone')
+      return
+    }
     setSubmitting(true)
     setSubmitError('')
     try {
@@ -144,6 +173,7 @@ export default function AuditGetStarted() {
         // When they opt in, carry the verbatim label so the backend can store
         // the exact consent text shown for the compliance audit trail.
         sms_consent_text: data.sms_consent ? SMS_CONSENT_LABEL : '',
+        phone_capture_variant: phoneVariant,
         ...getUtmAndAttribution(),
         stage: 2,
       }
@@ -166,7 +196,7 @@ export default function AuditGetStarted() {
         <section className="px-6 lg:px-12 py-16 lg:py-24">
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] gap-12 items-start">
             <div>
-              <p className="section-label mb-4">{step === 1 ? 'Get the audit' : 'Step 2 of 2 — optional'}</p>
+              <p className="section-label mb-4">{step === 1 ? 'Get the audit' : 'Step 2 of 2'}</p>
               <h1
                 className="font-serif text-charcoal mb-4"
                 style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 400 }}
@@ -174,13 +204,13 @@ export default function AuditGetStarted() {
                 {step === 1 ? (
                   <>Tell us about the <em className="not-italic font-medium">property</em>.</>
                 ) : (
-                  <>Your request is <em className="not-italic font-medium">in</em>.</>
+                  <>Shape your <em className="not-italic font-medium">audit</em>.</>
                 )}
               </h1>
               <p className="font-sans text-mid-charcoal mb-8 leading-relaxed max-w-2xl" style={{ fontSize: 17 }}>
                 {step === 1
                   ? 'Senior strategist on every audit. Written report back within 48 hours.'
-                  : "A few quick questions sharpen your audit — but they're optional. You're already on the list."}
+                  : 'Three quick questions decide what we analyze and the plan we send back.'}
               </p>
 
               <div className="relative overflow-hidden border border-stone/40 bg-white/70 mb-12 lg:hidden">
@@ -294,9 +324,16 @@ export default function AuditGetStarted() {
               {/* ── STAGE 2 — enrichment (all optional) ── */}
               {step === 2 && (
                 <>
-                  <div className="border border-brass/40 bg-brass/5 px-5 py-4 mb-10 font-sans text-charcoal text-sm">
-                    <strong>Got it{captured?.full_name ? `, ${captured.full_name.split(' ')[0]}` : ''}.</strong> Your audit
-                    request is in — we'll have the written report back within 48 hours.
+                  {/* Progress indicator — step 2 of 2. Motivates finishing; no
+                      "you're done" completion cue that reads as an exit. */}
+                  <div className="mb-10">
+                    <div className="flex items-center gap-2 mb-3" aria-hidden="true">
+                      <span className="h-1.5 flex-1 bg-brass rounded-full" />
+                      <span className="h-1.5 flex-1 bg-brass rounded-full" />
+                    </div>
+                    <p className="font-sans text-mid-charcoal/80 text-sm">
+                      {captured?.full_name ? `${captured.full_name.split(' ')[0]}, you're` : "You're"} on the last step. These three answers change what we analyze and the plan we send back.
+                    </p>
                   </div>
 
                   <form onSubmit={stage2.handleSubmit(onEnrich)} className="space-y-10" noValidate>
@@ -309,25 +346,33 @@ export default function AuditGetStarted() {
 
                     <fieldset className="space-y-6">
                       <legend className="font-serif text-charcoal mb-2" style={{ fontSize: 22, fontWeight: 500 }}>
-                        Sharpen your audit
+                        3 quick questions that shape your audit
                       </legend>
                       <p className="font-sans text-mid-charcoal/70 text-sm -mt-2 mb-2">
-                        Every answer helps — but skip anything you're unsure about.
+                        These change what we analyze and the plan we send.
                       </p>
 
-                      <Field
-                        label="Phone (optional)"
-                        error={stage2.formState.errors.phone}
-                        help="US/CA — any format works (e.g. 813-555-1234)."
-                      >
-                        <input
-                          type="tel"
-                          {...stage2.register('phone')}
-                          className={inputBase}
-                          autoComplete="tel"
-                          placeholder="(813) 555-1234"
-                        />
-                      </Field>
+                      {/* Phone — benefit-framed + visually prominent. A/B: variant
+                          B requires it (enforced client-side in onEnrich), variant
+                          A leaves it optional (control). */}
+                      <div className="border border-brass/40 bg-brass/5 px-4 py-4">
+                        <Field
+                          label="Where should we text your audit when it's ready?"
+                          required={phoneRequired}
+                          error={stage2.formState.errors.phone || phoneErr}
+                          help="US/CA number. We text the moment your report lands, so you're not refreshing your inbox."
+                        >
+                          <input
+                            type="tel"
+                            {...stage2.register('phone', {
+                              onChange: () => phoneErr && setPhoneErr(''),
+                            })}
+                            className={inputBase}
+                            autoComplete="tel"
+                            placeholder="(813) 555-1234"
+                          />
+                        </Field>
+                      </div>
 
                       {/* Optional SMS opt-in. Unchecked by default. Label is the
                           A2P-registered verbatim consent language — do not edit. */}
@@ -360,9 +405,9 @@ export default function AuditGetStarted() {
                         </select>
                       </Field>
 
-                      <Field label="Primary goal (optional)" error={stage2.formState.errors.primary_goal}>
+                      <Field label="Primary goal" required error={stage2.formState.errors.primary_goal}>
                         <select {...stage2.register('primary_goal')} className={inputBase} defaultValue="">
-                          <option value="">—</option>
+                          <option value="" disabled>Select…</option>
                           {PRIMARY_GOAL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                       </Field>
@@ -377,15 +422,15 @@ export default function AuditGetStarted() {
                           </select>
                         </Field>
                       </div>
-                      <Field label="Budget tier (optional)" error={stage2.formState.errors.budget_tier}>
+                      <Field label="Budget tier" required error={stage2.formState.errors.budget_tier}>
                         <select {...stage2.register('budget_tier')} className={inputBase} defaultValue="">
-                          <option value="">—</option>
+                          <option value="" disabled>Select…</option>
                           {BUDGET_TIER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                       </Field>
-                      <Field label="Timeline (optional)" error={stage2.formState.errors.timeline}>
+                      <Field label="Timeline" required error={stage2.formState.errors.timeline}>
                         <select {...stage2.register('timeline')} className={inputBase} defaultValue="">
-                          <option value="">—</option>
+                          <option value="" disabled>Select…</option>
                           {TIMELINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                       </Field>
@@ -400,7 +445,7 @@ export default function AuditGetStarted() {
                       </Field>
                     </fieldset>
 
-                    <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="pt-2">
                       <button
                         type="submit"
                         disabled={submitting}
@@ -408,13 +453,15 @@ export default function AuditGetStarted() {
                       >
                         {submitting ? 'Sending…' : 'Send These Details →'}
                       </button>
+                      {/* Unobtrusive skip — kept for tab-close honesty, deliberately
+                          low-contrast so it doesn't read as an invitation to leave. */}
                       <button
                         type="button"
                         onClick={() => navigate('/audit/requested')}
                         disabled={submitting}
-                        className="font-sans text-sm text-mid-charcoal/70 underline hover:text-charcoal transition-colors disabled:opacity-50"
+                        className="block mt-5 font-sans text-xs text-mid-charcoal/45 underline hover:text-mid-charcoal/70 transition-colors disabled:opacity-50"
                       >
-                        Skip — I'm done
+                        Skip for now
                       </button>
                     </div>
                   </form>

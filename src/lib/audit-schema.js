@@ -77,6 +77,12 @@ const enumStrict = (values) =>
     message: `Must be one of: ${values.join(', ')}`,
   })
 
+// Required enum with a human-friendly message (used for the re-required Stage-2
+// core qualifiers). A blank selection ('') fails with `message`, not the raw
+// value list.
+const enumRequired = (values, message) =>
+  z.string({ required_error: message }).refine((v) => values.includes(v), { message })
+
 // Personal-email gate, shared by capture + full schemas.
 const personalEmail = z
   .string()
@@ -171,7 +177,12 @@ export const auditStage1Schema = z.object({
 // is_listed + listing_url moved to the required Stage-1 gate, so they no
 // longer live here.
 export const auditEnrichmentSchema = z.object({
-  email: personalEmail,
+  // email + full_name are carried into the Stage-2 payload from the captured
+  // Stage-1 contact — they are NOT inputs on the Stage-2 form. They must be
+  // OPTIONAL here or client-side validation fails on an invisible required
+  // field and the whole Stage-2 submit silently no-ops (regression since #11).
+  // The server receives the real email in the payload to locate the contact.
+  email: personalEmail.optional(),
   full_name: z.string().min(2).max(80).optional(),
   phone: optionalPhone,
   // Optional SMS opt-in. Unchecked by default. The label shown to the user is
@@ -182,11 +193,20 @@ export const auditEnrichmentSchema = z.object({
   property_bathrooms: z
     .union([z.literal(''), z.literal(undefined), z.coerce.number().min(1).max(9)])
     .optional(),
-  primary_goal: enumOrEmpty(PRIMARY_GOAL_VALUES).optional(),
+  // Core qualifiers — RE-REQUIRED on Stage 2 (2026-07-10). Every audit since
+  // 6/20 built blind on inferred goal/budget/timeline because #11 made these
+  // optional; re-requiring restores qualification for the setter + nurture.
+  // A Stage-2 *skip* never hits this schema (client navigates away without a
+  // submit), so requiring here only gates an actual "Send These Details" click.
+  primary_goal: enumRequired(PRIMARY_GOAL_VALUES, 'Pick the goal that fits best — it shapes the whole audit.'),
+  budget_tier: enumRequired(BUDGET_TIER_VALUES, 'A rough budget band changes what we recommend.'),
+  timeline: enumRequired(TIMELINE_VALUES, 'Let us know your timeline so we prioritize the right moves.'),
+  // Genuinely optional enrichment.
   target_adr: optionalTargetAdr,
   current_performance: enumOrEmpty(CURRENT_PERFORMANCE_VALUES).optional(),
-  budget_tier: enumOrEmpty(BUDGET_TIER_VALUES).optional(),
-  timeline: enumOrEmpty(TIMELINE_VALUES).optional(),
   notes: z.string().max(1000).optional(),
+  // Phone-capture A/B (2026-07-10): which variant the user saw. Optional +
+  // free-form so a missing/unknown value never 400s a Stage-2 submit.
+  phone_capture_variant: z.string().max(20).optional(),
   _company_legal_name: z.string().max(0).optional(),
 })
