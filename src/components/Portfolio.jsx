@@ -52,7 +52,7 @@ export default function Portfolio() {
               style={{ aspectRatio: '4/3' }}
             >
               <img
-                src={`${R2}${img.file}`}
+                src={img.src || `${R2}${img.file}`}
                 alt={img.alt}
                 loading={i < 6 ? 'eager' : 'lazy'}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"

@@ -57,6 +57,10 @@ export const galleryImages = [
   { file: '26-web-or-mls-Lets%20Go%20Click-036.jpeg', alt: 'Orange velvet sectional living room with gold accents' },
   { file: '139-web-or-mls-Lets%20Go%20Click-046.jpeg', alt: 'Kids playhouse bedroom with lemonade stand awning' },
   { file: '42-web-or-mls-Lets%20Go%20Click-027.jpeg', alt: 'Nautical twin bedroom with coastal styling' },
+  { src: '/assets/gallery-42.jpg', alt: 'Coastal canopy bed with navy walls and gold palm-frond wallpaper' },
+  { src: '/assets/gallery-43.jpg', alt: 'Surf-themed bedroom with teal accents and palm surfboard art' },
+  { src: '/assets/gallery-56.jpg', alt: 'Nautical dining room with blue walls, oar wall decor, and round wood table' },
+  { src: '/assets/gallery-58.jpg', alt: 'Boho coastal bedroom with pampas grass mural and rust accents' },
 ]
 
 export const R2_BASE = R2
