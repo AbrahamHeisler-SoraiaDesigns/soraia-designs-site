@@ -30,6 +30,8 @@ export const HUBSPOT_CONTACT_BASE_PROPS = [
   'audit_notes',
   'audit_status',
   'audit_pdf_url',
+  'audit_phone_capture_variant',
+  'audit_phone_present',
   'audit_sms_consent',
   'audit_sms_consent_at',
   'audit_sms_consent_text',
