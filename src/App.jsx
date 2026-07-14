@@ -6,6 +6,7 @@ import Terms from './pages/Terms'
 import AuditLanding from './pages/audit/Landing'
 import AuditGetStarted from './pages/audit/GetStarted'
 import AuditRequested from './pages/audit/Requested'
+import Book from './pages/Book'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/audit" element={<AuditLanding />} />
         <Route path="/audit/get-started" element={<AuditGetStarted />} />
         <Route path="/audit/requested" element={<AuditRequested />} />
+        <Route path="/book" element={<Book />} />
       </Routes>
     </BrowserRouter>
   )
