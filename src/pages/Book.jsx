@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Footer from '../components/Footer'
@@ -19,6 +19,13 @@ const CAL_JS = 'https://assets.calendly.com/assets/external/widget.js'
  */
 export default function Book() {
   const widgetRef = useRef(null)
+  // Content-blocker / load-failure fallback. A meaningful slice of ad traffic
+  // runs blockers that kill Calendly's CDN — without this, those visitors hit a
+  // blank booking page. On failure we surface a direct link that still carries
+  // the UTMs, so a blocked visitor books (attribution via Calendly->HubSpot;
+  // the on-domain Schedule pixel is the only thing lost on that degraded path).
+  const [calendlyBlocked, setCalendlyBlocked] = useState(false)
+  const [fallbackHref, setFallbackHref] = useState(CALENDLY_URL)
 
   useEffect(() => {
     document.title = 'Book a Call | Soraia Designs'
@@ -33,6 +40,14 @@ export default function Book() {
       utmContent: qs.get('utm_content') || undefined,
       utmTerm: qs.get('utm_term') || undefined,
     }
+
+    // Preserve UTM attribution on the fallback direct link too.
+    const passUtms = new URLSearchParams()
+    for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) {
+      const v = qs.get(k)
+      if (v) passUtms.set(k, v)
+    }
+    setFallbackHref(passUtms.toString() ? `${CALENDLY_URL}?${passUtms}` : CALENDLY_URL)
 
     if (!document.querySelector(`link[href="${CAL_CSS}"]`)) {
       const link = document.createElement('link')
@@ -70,6 +85,17 @@ export default function Book() {
       }, 100)
     }
 
+    // If Calendly hasn't rendered an iframe within 6s (blocker, network, CDN
+    // outage), give up and show the direct-link fallback so the page is never
+    // a dead end.
+    const failTimer = setTimeout(() => {
+      const rendered = widgetRef.current && widgetRef.current.querySelector('iframe')
+      if (!cancelled && !rendered) {
+        if (poll) clearInterval(poll)
+        setCalendlyBlocked(true)
+      }
+    }, 6000)
+
     // Fire Meta `Schedule` (NOT Lead — Lead belongs to the /audit form) only on a
     // completed booking. event_id = Calendly event URI so a future CAPI leg dedupes.
     const onMessage = (e) => {
@@ -87,6 +113,7 @@ export default function Book() {
     return () => {
       cancelled = true
       if (poll) clearInterval(poll)
+      clearTimeout(failTimer)
       window.removeEventListener('message', onMessage)
     }
   }, [])
@@ -136,10 +163,25 @@ export default function Book() {
         <section className="px-4 lg:px-12 pb-16">
           <div
             ref={widgetRef}
-            className="calendly-inline-widget max-w-3xl mx-auto w-full min-h-[1100px] md:min-h-[760px]"
+            className={`calendly-inline-widget max-w-3xl mx-auto w-full ${calendlyBlocked ? '' : 'min-h-[1100px] md:min-h-[760px]'}`}
             style={{ minWidth: 320 }}
             data-book-widget
           />
+          {calendlyBlocked && (
+            <div className="max-w-3xl mx-auto text-center py-16">
+              <p className="font-sans text-mid-charcoal mb-6" style={{ fontSize: 17 }}>
+                Having trouble loading the scheduler? Book your call directly:
+              </p>
+              <a
+                href={fallbackHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-sans text-xs font-medium tracking-widest uppercase px-10 py-4 bg-charcoal text-ivory hover:bg-brass transition-all duration-300 inline-block"
+              >
+                Book your call →
+              </a>
+            </div>
+          )}
           <noscript>
             <div className="max-w-3xl mx-auto text-center mt-6">
               <a
