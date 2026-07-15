@@ -4,6 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
 import AuditNav from '../../components/AuditNav'
 import Footer from '../../components/Footer'
+import { fireLeadWithMatching } from '../../lib/pixel'
+
+// Same pixel id as the base pixel in index.html.
+const META_PIXEL_ID = '966166489104332'
 import {
   auditStage1Schema,
   auditEnrichmentSchema,
@@ -137,9 +141,15 @@ export default function AuditGetStarted() {
         )
       }
       const result = await res.json().catch(() => ({}))
-      if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('track', 'Lead', {}, { eventID: result.event_id })
-      }
+      // Fire Lead WITH advanced matching (em/fn/ln/external_id) so Meta can join
+      // it to the ad click — empty user-data was near-zero EMQ. Deduped against
+      // the server CAPI Lead via the shared event_id.
+      fireLeadWithMatching(typeof window !== 'undefined' ? window.fbq : null, {
+        pixelId: META_PIXEL_ID,
+        email: data.email,
+        full_name: data.full_name,
+        eventId: result.event_id,
+      })
       setCaptured({ full_name: data.full_name, email: data.email })
       setSubmitting(false)
       setStep(2)
