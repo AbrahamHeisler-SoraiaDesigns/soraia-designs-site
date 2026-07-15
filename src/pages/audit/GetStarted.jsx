@@ -141,15 +141,23 @@ export default function AuditGetStarted() {
         )
       }
       const result = await res.json().catch(() => ({}))
-      // Fire Lead WITH advanced matching (em/fn/ln/external_id) so Meta can join
-      // it to the ad click — empty user-data was near-zero EMQ. Deduped against
-      // the server CAPI Lead via the shared event_id.
-      fireLeadWithMatching(typeof window !== 'undefined' ? window.fbq : null, {
-        pixelId: META_PIXEL_ID,
-        email: data.email,
-        full_name: data.full_name,
-        eventId: result.event_id,
-      })
+      // Fire the browser Lead ONLY with the server-issued event_id, WITH advanced
+      // matching (em/fn/ln/external_id) so Meta can join it to the ad click.
+      // Guard on event_id because:
+      //  - honeypot/bot submissions return { event_id: null } and fire no server
+      //    Lead — firing a browser Lead there would pollute EMQ with junk;
+      //  - a missing id (rare parse failure) would fire an UNdeduped Lead against
+      //    the CAPI Lead → double-count. Skip and let CAPI carry attribution.
+      if (result.event_id) {
+        fireLeadWithMatching(typeof window !== 'undefined' ? window.fbq : null, {
+          pixelId: META_PIXEL_ID,
+          email: data.email,
+          full_name: data.full_name,
+          eventId: result.event_id,
+        })
+      } else {
+        console.warn('[audit] Lead pixel skipped — no event_id (honeypot or parse failure)')
+      }
       setCaptured({ full_name: data.full_name, email: data.email })
       setSubmitting(false)
       setStep(2)
