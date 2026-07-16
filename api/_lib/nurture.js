@@ -53,10 +53,21 @@ export async function sendNurtureEmail(contact, emailKey) {
     return { ok: true, skipped: true, reason: 'sequence_state_changed', expectedNextEmail }
   }
 
-  // Reply-aware pre-send gate (build-spec §4 / doc 15 §C). A manual pause, or ANY
-  // inbound reply from the lead, stops the send — this is what makes the Esther
-  // collision (automated goodbye → cold re-pitch) structurally impossible.
-  // CALL_BOOKED / terminal states are already filtered upstream by nextEmailKey.
+  const email = buildEmailContent(emailKey, freshContact)
+  const text = htmlToText(email.html) // plain-text render (doc 14 spam-fingerprint finding)
+
+  // DRY_RUN: produce the send-plan and STOP — NO external calls of any kind (no
+  // Gmail reply-check, no Brevo upsert, no send). A true side-effect-free plan for
+  // Maya to QA per email key before the first live run. The reply-gate below is a
+  // live-send safety, applied when a real send actually fires.
+  if (isDryRun()) {
+    return { ok: true, dryRun: true, emailKey, to: freshContact.email, subject: email.subject, text }
+  }
+
+  // Reply-aware pre-send gate (build-spec §4 / doc 15 §C) — LIVE path only. A
+  // manual pause, or ANY inbound reply from the lead, stops the send — this is
+  // what makes the Esther collision (goodbye → cold re-pitch) structurally
+  // impossible. CALL_BOOKED / terminal states are filtered upstream by nextEmailKey.
   if (freshContact.audit_nurture_status === 'paused_manual') {
     return { ok: true, skipped: true, reason: 'paused_manual' }
   }
@@ -73,17 +84,6 @@ export async function sendNurtureEmail(contact, emailKey) {
     // replied. The next cron run retries the check.
     console.error('reply_check_failed_skip', emailKey, String(error))
     return { ok: false, skipped: true, reason: 'reply_check_failed' }
-  }
-
-  const email = buildEmailContent(emailKey, freshContact)
-  const text = htmlToText(email.html) // plain-text render (doc 14 spam-fingerprint finding)
-
-  // DRY_RUN: produce the send-plan and STOP with NO network writes at all — not
-  // the Gmail send, and NOT the Brevo upsert (a contact upsert can trip a Brevo
-  // auto-send workflow, which would be a real email during a "dry run"). Maya
-  // reviews the rendered plain text per email key before the first live run.
-  if (isDryRun()) {
-    return { ok: true, dryRun: true, emailKey, to: freshContact.email, subject: email.subject, text }
   }
 
   // Keep the Brevo CONTACT in sync (segmentation + verified fallback), but Brevo
