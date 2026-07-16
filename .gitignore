@@ -4,7 +4,8 @@ dist
 screenshots
 *.local
 .env
-.env*.local
+.env*
+!.env.example
 .vercel
 .claude/
 
