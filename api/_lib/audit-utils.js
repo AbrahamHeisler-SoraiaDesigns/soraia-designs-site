@@ -92,14 +92,16 @@ export function unsubscribeUrl(email) {
 }
 
 function nurtureFooter(contact) {
-  const sender = senderProfile()
+  // No literal "Reply-to:" line: these send as abe@ via Gmail with NO Reply-To
+  // header, so a plain reply lands on abe@ — the mailbox hasRecentInboundFrom
+  // polls for the reply gate. Printing hello@ here told readers to route replies
+  // away from that gate (Maya QA blocker 1). The reply CTA below is enough.
   const unsubUrl = unsubscribeUrl(contact.email)
   return `
     <hr style="margin:24px 0;border:none;border-top:1px solid #e5e5e5;" />
     <p style="font-size:12px;line-height:1.5;color:#666;">
       Reply to this email if you'd rather talk it through directly.<br/>
-      If these audit follow-ups are not useful, <a href="${unsubUrl}">unsubscribe here</a>.<br/>
-      Reply-to: ${sender.replyTo}
+      If these audit follow-ups are not useful, <a href="${unsubUrl}">unsubscribe here</a>.
     </p>
   `
 }
@@ -146,6 +148,28 @@ function htmlParagraphs(lines) {
 
 function bullets(items) {
   return `<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`
+}
+
+// Plain-text render of the nurture HTML (doc 14: the promotional-HTML fingerprint
+// is itself the spam signal). Ports the EXACT copy — links become "label: url" so
+// every UTM'd URL (Calendly CTA, unsubscribe) survives and stays clickable in a
+// plain-text mail. Maya's port conditions #1 (UTMs) and #2 (opt-out) both ride on
+// this being a faithful render of buildEmailContent's html, footer included.
+export function htmlToText(html) {
+  let s = String(html || '')
+  // <a href="URL">LABEL</a> -> "LABEL: URL" (or just URL if label == url)
+  s = s.replace(/<a\b[^>]*?href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href, label) => {
+    const text = label.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+    return !text || href.includes(text) ? href : `${text}: ${href}`
+  })
+  s = s.replace(/<li[^>]*>/gi, '\n- ').replace(/<\/li>/gi, '')
+  s = s.replace(/<\/(p|div|h[1-6]|ul|blockquote)>/gi, '\n\n')
+  s = s.replace(/<br\s*\/?>/gi, '\n')
+  s = s.replace(/<hr[^>]*>/gi, '\n')
+  s = s.replace(/<[^>]+>/g, '') // strip any remaining tags
+  s = s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&rarr;/g, '->').replace(/&nbsp;/g, ' ')
+  return s.replace(/[ \t]+\n/g, '\n').replace(/\n[ \t]+/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 
 // Drop-off recovery angle, keyed to the lead's audit_primary_goal (real HubSpot enum values).

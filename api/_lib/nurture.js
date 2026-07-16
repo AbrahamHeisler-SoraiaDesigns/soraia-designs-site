@@ -4,11 +4,17 @@ import {
   TERMINAL_LEAD_STATUSES,
   TERMINAL_NURTURE_STATUSES,
 } from './audit-config.js'
-import { buildEmailContent, daysSince, firstName, isoNow } from './audit-utils.js'
-import { sendBrevoEmail, sendResendEmail, upsertBrevoContact } from './brevo.js'
+import { buildEmailContent, daysSince, htmlToText, isoNow } from './audit-utils.js'
+import { upsertBrevoContact } from './brevo.js'
+import { sendGmailAs, hasRecentInboundFrom, isDryRun } from './gmail.js'
 import { findContactByEmail, updateContact } from './hubspot.js'
 
 export function contactIsSuppressed(contact) {
+  // Test rows never receive a nurture send. Mirrors the #55 audit-watcher guard
+  // (soraia_audit_hubspot_poller.py): HubSpot returns the boolean as the string
+  // "true". One property (audit_test) now cleans both lanes — no watcher
+  // generation AND no sequencer send — for the test:* contacts.
+  if (contact.audit_test === 'true') return true
   return TERMINAL_LEAD_STATUSES.has(contact.hs_lead_status || '') || TERMINAL_NURTURE_STATUSES.has(contact.audit_nurture_status || '')
 }
 
@@ -39,93 +45,95 @@ export async function sendNurtureEmail(contact, emailKey) {
     return { ok: false, skipped: true, reason: 'contact_not_found' }
   }
 
+  // Idempotency: don't re-send the same step inside a tight window.
   const duplicateWindowDays = 20 / 1440
   const alreadySentThisStep = freshContact.audit_last_email_key === emailKey && daysSince(freshContact.audit_last_email_sent_at) < duplicateWindowDays
   if (alreadySentThisStep) {
     return { ok: true, skipped: true, reason: 'duplicate_recent_send' }
   }
 
+  // The sequence must still expect exactly this step.
   const expectedNextEmail = nextEmailKey(freshContact)
   if (expectedNextEmail !== emailKey) {
     return { ok: true, skipped: true, reason: 'sequence_state_changed', expectedNextEmail }
   }
 
-  // Stay 'active' through the recovery layer; only the final recovery touch completes the nurture.
-  const nextNurtureStatus = emailKey === EMAIL_KEYS.RECOVERY_2 ? 'completed' : 'active'
-  const claimTime = isoNow()
-  await updateContact(freshContact.id, {
-    // HubSpot allowed values: pending, synced, suppressed, errored
-    // Use `pending` while the send is in flight; `sending` is not a valid enum option.
-    audit_brevo_sync_status: 'pending',
-    audit_brevo_last_sync_at: claimTime,
-    audit_nurture_status: nextNurtureStatus,
-    audit_last_email_key: emailKey,
-    audit_last_email_sent_at: claimTime,
-  })
+  const email = buildEmailContent(emailKey, freshContact)
+  const text = htmlToText(email.html) // plain-text render (doc 14 spam-fingerprint finding)
 
-  const contactForSend = {
-    ...freshContact,
-    audit_nurture_status: nextNurtureStatus,
-    audit_last_email_key: emailKey,
-    audit_last_email_sent_at: claimTime,
+  // DRY_RUN: produce the send-plan and STOP — NO external calls of any kind (no
+  // Gmail reply-check, no Brevo upsert, no send). A true side-effect-free plan for
+  // Maya to QA per email key before the first live run. The reply-gate below is a
+  // live-send safety, applied when a real send actually fires.
+  if (isDryRun()) {
+    return { ok: true, dryRun: true, emailKey, to: freshContact.email, subject: email.subject, text }
   }
-  const email = buildEmailContent(emailKey, contactForSend)
-  let brevoUpsertError = null
 
+  // Reply-aware pre-send gate (build-spec §4 / doc 15 §C) — LIVE path only. A
+  // manual pause, or ANY inbound reply from the lead, stops the send — this is
+  // what makes the Esther collision (goodbye → cold re-pitch) structurally
+  // impossible. CALL_BOOKED / terminal states are filtered upstream by nextEmailKey.
+  if (freshContact.audit_nurture_status === 'paused_manual') {
+    return { ok: true, skipped: true, reason: 'paused_manual' }
+  }
   try {
-    try {
-      await upsertBrevoContact(contactForSend)
-    } catch (error) {
-      brevoUpsertError = error
-    }
-
-    if (emailKey === EMAIL_KEYS.EMAIL_1) {
-      await sendResendEmail({
-        toEmail: freshContact.email,
-        subject: email.subject,
-        html: email.html,
+    if (await hasRecentInboundFrom(freshContact.email)) {
+      await updateContact(freshContact.id, {
+        audit_nurture_status: 'paused_reply',
+        audit_brevo_last_sync_at: isoNow(),
       })
-    } else {
-      try {
-        await sendBrevoEmail({
-          toEmail: freshContact.email,
-          toName: firstName(contactForSend),
-          subject: email.subject,
-          html: email.html,
-          previewText: email.previewText,
-        })
-      } catch (brevoSendError) {
-        // Brevo unavailable (e.g. key/config). Fall back to the proven Resend path so the
-        // sequence still delivers; surface the Brevo failure for follow-up without blocking the send.
-        console.error('brevo_send_failed_fallback_resend', emailKey, String(brevoSendError))
-        await sendResendEmail({
-          toEmail: freshContact.email,
-          subject: email.subject,
-          html: email.html,
-        })
-      }
+      return { ok: true, skipped: true, reason: 'lead_replied' }
     }
+  } catch (error) {
+    // Fail CLOSED: better to skip a send than risk mailing a lead who already
+    // replied. The next cron run retries the check.
+    console.error('reply_check_failed_skip', emailKey, String(error))
+    return { ok: false, skipped: true, reason: 'reply_check_failed' }
+  }
+
+  // Keep the Brevo CONTACT in sync (segmentation + verified fallback), but Brevo
+  // must NOT send — Gmail is the only sender (Maya port condition #3). Upsert only.
+  let brevoUpsertError = null
+  try {
+    await upsertBrevoContact(freshContact)
+  } catch (error) {
+    brevoUpsertError = error
+  }
+
+  // Send as abe@ via Gmail. Reply-To is intentionally omitted so replies land on
+  // From (abe@) — the exact mailbox hasRecentInboundFrom polls, so the reply gate
+  // can actually see them (hello@ also forwards to abe@). Throws on any non-2xx →
+  // no flags written below.
+  let sendResult
+  try {
+    sendResult = await sendGmailAs({
+      to: freshContact.email,
+      subject: email.subject,
+      text,
+    })
   } catch (error) {
     await updateContact(freshContact.id, {
       audit_brevo_sync_status: 'errored',
       audit_brevo_last_sync_at: isoNow(),
-      audit_nurture_status: freshContact.audit_nurture_status || 'active',
-      audit_last_email_key: freshContact.audit_last_email_key || '',
-      audit_last_email_sent_at: freshContact.audit_last_email_sent_at || '',
     })
     throw error
   }
 
+  // FLAG-ON-SUCCESS (the flag-lies fix): write the send flags ONLY now that Gmail
+  // returned a real message id. Because a failed send throws above and never
+  // reaches here, a non-send can no longer record itself as sent.
+  const nextNurtureStatus = emailKey === EMAIL_KEYS.RECOVERY_2 ? 'completed' : 'active'
+  const sentAt = isoNow()
   const props = {
-    audit_brevo_sync_status: brevoUpsertError ? 'errored' : 'synced',
-    audit_brevo_last_sync_at: isoNow(),
-    audit_nurture_status: nextNurtureStatus,
     audit_last_email_key: emailKey,
-    audit_last_email_sent_at: claimTime,
+    audit_last_email_sent_at: sentAt,
+    audit_nurture_status: nextNurtureStatus,
+    audit_brevo_sync_status: brevoUpsertError ? 'errored' : 'synced',
+    audit_brevo_last_sync_at: sentAt,
   }
   if (emailKey === EMAIL_KEYS.EMAIL_5 || emailKey === EMAIL_KEYS.RECOVERY_2) props.hs_lead_status = 'NURTURE_FATIGUED'
   await updateContact(freshContact.id, props)
-  return { ok: true, emailKey }
+  return { ok: true, emailKey, messageId: sendResult.messageId }
 }
 
 export async function syncLeadToBrevoAndMark(contact, initialEmailKey = EMAIL_KEYS.EMAIL_1) {
