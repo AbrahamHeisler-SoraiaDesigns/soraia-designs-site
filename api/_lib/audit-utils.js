@@ -148,6 +148,28 @@ function bullets(items) {
   return `<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`
 }
 
+// Plain-text render of the nurture HTML (doc 14: the promotional-HTML fingerprint
+// is itself the spam signal). Ports the EXACT copy — links become "label: url" so
+// every UTM'd URL (Calendly CTA, unsubscribe) survives and stays clickable in a
+// plain-text mail. Maya's port conditions #1 (UTMs) and #2 (opt-out) both ride on
+// this being a faithful render of buildEmailContent's html, footer included.
+export function htmlToText(html) {
+  let s = String(html || '')
+  // <a href="URL">LABEL</a> -> "LABEL: URL" (or just URL if label == url)
+  s = s.replace(/<a\b[^>]*?href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href, label) => {
+    const text = label.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+    return !text || href.includes(text) ? href : `${text}: ${href}`
+  })
+  s = s.replace(/<li[^>]*>/gi, '\n- ').replace(/<\/li>/gi, '')
+  s = s.replace(/<\/(p|div|h[1-6]|ul|blockquote)>/gi, '\n\n')
+  s = s.replace(/<br\s*\/?>/gi, '\n')
+  s = s.replace(/<hr[^>]*>/gi, '\n')
+  s = s.replace(/<[^>]+>/g, '') // strip any remaining tags
+  s = s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&rarr;/g, '->').replace(/&nbsp;/g, ' ')
+  return s.replace(/[ \t]+\n/g, '\n').replace(/\n[ \t]+/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
+}
+
 // Drop-off recovery angle, keyed to the lead's audit_primary_goal (real HubSpot enum values).
 // The one piece that needs a live conversation rather than a PDF.
 function dropoffAngle(contact) {

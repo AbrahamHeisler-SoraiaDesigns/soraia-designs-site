@@ -161,5 +161,23 @@ export async function threadHasInboundFrom(threadId, leadEmail) {
   })
 }
 
+// Reply-aware pre-send gate (build-spec §4), search-based so it needs no stored
+// thread id and catches replies even if threading broke. True if abe@'s mailbox
+// has ANY inbound message from the lead in the window. The sequencer STOPs on true
+// (→ paused_reply), making the Esther "goodbye-then-cold-pitch" collision
+// structurally impossible.
+export async function hasRecentInboundFrom(leadEmail, days = 60) {
+  if (!leadEmail) return false
+  const accessToken = await getAccessToken()
+  const q = encodeURIComponent(`from:${String(leadEmail).trim()} newer_than:${days}d`)
+  const res = await fetch(
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${q}&maxResults=1`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  )
+  if (!res.ok) throw new Error(`gmail: message list ${res.status}: ${await res.text()}`)
+  const json = await res.json()
+  return (json.resultSizeEstimate || 0) > 0 || (Array.isArray(json.messages) && json.messages.length > 0)
+}
+
 // Exported for unit tests.
 export const __test = { buildRawMessage, assertHeaderSafe, normalizeEmail }
