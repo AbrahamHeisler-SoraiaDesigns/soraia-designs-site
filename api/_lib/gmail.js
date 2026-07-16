@@ -101,6 +101,10 @@ function buildRawMessage({ to, subject, text, replyTo, inReplyTo, references, he
 // presence of a messageId key) before writing HubSpot flags.
 export async function sendGmailAs({ to, subject, text, replyTo, inReplyTo, references, threadId, headers }) {
   if (!to || !subject || !text) throw new Error('gmail: to, subject, and text are required')
+  // Single-recipient guard (defense-in-depth): a comma-joined address string is
+  // valid RFC822 and would silently add recipients. The sequencer always sends to
+  // exactly one lead, so reject any address list.
+  if (String(to).includes(',')) throw new Error('gmail: to must be a single recipient')
 
   if (isDryRun()) {
     const bytes = Buffer.byteLength(String(text), 'utf8')

@@ -4,7 +4,7 @@ import {
   TERMINAL_LEAD_STATUSES,
   TERMINAL_NURTURE_STATUSES,
 } from './audit-config.js'
-import { buildEmailContent, daysSince, htmlToText, isoNow, senderProfile } from './audit-utils.js'
+import { buildEmailContent, daysSince, htmlToText, isoNow } from './audit-utils.js'
 import { upsertBrevoContact } from './brevo.js'
 import { sendGmailAs, hasRecentInboundFrom, isDryRun } from './gmail.js'
 import { findContactByEmail, updateContact } from './hubspot.js'
@@ -77,31 +77,34 @@ export async function sendNurtureEmail(contact, emailKey) {
 
   const email = buildEmailContent(emailKey, freshContact)
   const text = htmlToText(email.html) // plain-text render (doc 14 spam-fingerprint finding)
-  const sender = senderProfile()
+
+  // DRY_RUN: produce the send-plan and STOP with NO network writes at all — not
+  // the Gmail send, and NOT the Brevo upsert (a contact upsert can trip a Brevo
+  // auto-send workflow, which would be a real email during a "dry run"). Maya
+  // reviews the rendered plain text per email key before the first live run.
+  if (isDryRun()) {
+    return { ok: true, dryRun: true, emailKey, to: freshContact.email, subject: email.subject, text }
+  }
 
   // Keep the Brevo CONTACT in sync (segmentation + verified fallback), but Brevo
   // must NOT send — Gmail is the only sender (Maya port condition #3). Upsert only.
   let brevoUpsertError = null
   try {
-    await upsertBrevoContact({ ...freshContact, audit_last_email_key: emailKey })
+    await upsertBrevoContact(freshContact)
   } catch (error) {
     brevoUpsertError = error
   }
 
-  // DRY_RUN: produce the send-plan, write NO flags. Maya reviews the rendered
-  // plain text per email key before the first live run (G-MAYA gate).
-  if (isDryRun()) {
-    return { ok: true, dryRun: true, emailKey, to: freshContact.email, subject: email.subject, text }
-  }
-
-  // Send as abe@ via Gmail. Throws on any non-2xx → no flags written below.
+  // Send as abe@ via Gmail. Reply-To is intentionally omitted so replies land on
+  // From (abe@) — the exact mailbox hasRecentInboundFrom polls, so the reply gate
+  // can actually see them (hello@ also forwards to abe@). Throws on any non-2xx →
+  // no flags written below.
   let sendResult
   try {
     sendResult = await sendGmailAs({
       to: freshContact.email,
       subject: email.subject,
       text,
-      replyTo: sender.replyTo,
     })
   } catch (error) {
     await updateContact(freshContact.id, {
