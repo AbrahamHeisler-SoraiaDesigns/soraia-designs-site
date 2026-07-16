@@ -162,8 +162,10 @@ export default function Book() {
           </div>
         </section>
 
-        {/* Calendly inline widget. Tall min-heights keep the whole flow visible so
-            the iframe never scroll-traps on mobile (known Calendly-embed failure). */}
+        {/* Calendly inline widget. The container needs an EXPLICIT height (not
+            min-height): initInlineWidget mounts an iframe with height="100%", and a
+            percentage height only resolves against a parent with a real height. With
+            min-h (height:auto) the iframe collapses to its 150px default. */}
         <section className="px-4 lg:px-12 pb-16">
           {/* No `calendly-inline-widget` class: widget.js auto-scans for it and
               initializes any match by reading `data-url`. Our div has none (we
@@ -172,7 +174,7 @@ export default function Book() {
               defines -> the embed never renders. Layout classes do all styling. */}
           <div
             ref={widgetRef}
-            className={`max-w-3xl mx-auto w-full ${calendlyBlocked ? '' : 'min-h-[1100px] md:min-h-[760px]'}`}
+            className={`max-w-3xl mx-auto w-full ${calendlyBlocked ? '' : 'h-[1100px] md:h-[760px]'}`}
             style={{ minWidth: 320 }}
             data-book-widget
           />
