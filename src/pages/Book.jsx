@@ -32,14 +32,18 @@ export default function Book() {
 
     // Forward the page's UTMs into Calendly. The Calendly-UTM -> HubSpot join is
     // how bookings attribute; if the embed swallows these, R1 attribution dies.
+    // Drop absent keys: Calendly serializes an `undefined` value as the literal
+    // string "undefined", which would land as utm_term=undefined in HubSpot.
     const qs = new URLSearchParams(window.location.search)
-    const utm = {
-      utmSource: qs.get('utm_source') || undefined,
-      utmMedium: qs.get('utm_medium') || undefined,
-      utmCampaign: qs.get('utm_campaign') || undefined,
-      utmContent: qs.get('utm_content') || undefined,
-      utmTerm: qs.get('utm_term') || undefined,
-    }
+    const utm = Object.fromEntries(
+      Object.entries({
+        utmSource: qs.get('utm_source'),
+        utmMedium: qs.get('utm_medium'),
+        utmCampaign: qs.get('utm_campaign'),
+        utmContent: qs.get('utm_content'),
+        utmTerm: qs.get('utm_term'),
+      }).filter(([, v]) => v)
+    )
 
     // Preserve UTM attribution on the fallback direct link too.
     const passUtms = new URLSearchParams()
@@ -161,9 +165,14 @@ export default function Book() {
         {/* Calendly inline widget. Tall min-heights keep the whole flow visible so
             the iframe never scroll-traps on mobile (known Calendly-embed failure). */}
         <section className="px-4 lg:px-12 pb-16">
+          {/* No `calendly-inline-widget` class: widget.js auto-scans for it and
+              initializes any match by reading `data-url`. Our div has none (we
+              pass the URL via initInlineWidget), so the auto-scan hits
+              null.split() and crashes the whole script -> window.Calendly never
+              defines -> the embed never renders. Layout classes do all styling. */}
           <div
             ref={widgetRef}
-            className={`calendly-inline-widget max-w-3xl mx-auto w-full ${calendlyBlocked ? '' : 'min-h-[1100px] md:min-h-[760px]'}`}
+            className={`max-w-3xl mx-auto w-full ${calendlyBlocked ? '' : 'min-h-[1100px] md:min-h-[760px]'}`}
             style={{ minWidth: 320 }}
             data-book-widget
           />
