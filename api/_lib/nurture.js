@@ -10,6 +10,11 @@ import { sendGmailAs, hasRecentInboundFrom, isDryRun } from './gmail.js'
 import { findContactByEmail, updateContact } from './hubspot.js'
 
 export function contactIsSuppressed(contact) {
+  // Test rows never receive a nurture send. Mirrors the #55 audit-watcher guard
+  // (soraia_audit_hubspot_poller.py): HubSpot returns the boolean as the string
+  // "true". One property (audit_test) now cleans both lanes — no watcher
+  // generation AND no sequencer send — for the test:* contacts.
+  if (contact.audit_test === 'true') return true
   return TERMINAL_LEAD_STATUSES.has(contact.hs_lead_status || '') || TERMINAL_NURTURE_STATUSES.has(contact.audit_nurture_status || '')
 }
 

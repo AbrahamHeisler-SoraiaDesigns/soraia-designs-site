@@ -92,14 +92,16 @@ export function unsubscribeUrl(email) {
 }
 
 function nurtureFooter(contact) {
-  const sender = senderProfile()
+  // No literal "Reply-to:" line: these send as abe@ via Gmail with NO Reply-To
+  // header, so a plain reply lands on abe@ — the mailbox hasRecentInboundFrom
+  // polls for the reply gate. Printing hello@ here told readers to route replies
+  // away from that gate (Maya QA blocker 1). The reply CTA below is enough.
   const unsubUrl = unsubscribeUrl(contact.email)
   return `
     <hr style="margin:24px 0;border:none;border-top:1px solid #e5e5e5;" />
     <p style="font-size:12px;line-height:1.5;color:#666;">
       Reply to this email if you'd rather talk it through directly.<br/>
-      If these audit follow-ups are not useful, <a href="${unsubUrl}">unsubscribe here</a>.<br/>
-      Reply-to: ${sender.replyTo}
+      If these audit follow-ups are not useful, <a href="${unsubUrl}">unsubscribe here</a>.
     </p>
   `
 }
