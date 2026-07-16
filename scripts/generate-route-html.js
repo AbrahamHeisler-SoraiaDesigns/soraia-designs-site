@@ -74,6 +74,18 @@ const routes = [
     ogUrl: 'https://www.soraiadesigns.com/audit/requested',
     robots: 'noindex, nofollow',
   },
+  {
+    path: 'book',
+    title: 'Book a Call | Soraia Designs',
+    description:
+      'Book a 15-minute STR strategy call with Soraia Designs. We walk through where your property sits in its market, what the top comps are doing, and the revenue math. No pressure, no pitch.',
+    canonical: 'https://www.soraiadesigns.com/book',
+    ogTitle: 'Book a Call | Soraia Designs',
+    ogDescription:
+      'Book a 15-minute STR strategy call — market position, top comps, and the revenue math. No pressure, no pitch.',
+    ogUrl: 'https://www.soraiadesigns.com/book',
+    robots: 'noindex, nofollow',
+  },
 ]
 
 for (const route of routes) {
