@@ -148,7 +148,7 @@ export default function Book() {
               className="font-serif text-charcoal mb-5"
               style={{ fontSize: 'clamp(32px, 4.5vw, 52px)', fontWeight: 400 }}
             >
-              Book your <em className="not-italic font-medium">15-minute</em> strategy call.
+              Book your <em className="not-italic font-medium">30-minute</em> strategy call.
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 16 }}

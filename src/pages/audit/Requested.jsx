@@ -118,15 +118,15 @@ export default function AuditRequested() {
                 className="font-serif text-ivory mb-6"
                 style={{ fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 400 }}
               >
-                Book your 15-minute call <em className="not-italic font-medium">now</em>.
+                Book your 30-minute call <em className="not-italic font-medium">now</em>.
               </h2>
               <p className="font-sans text-stone/75 max-w-2xl mx-auto leading-relaxed" style={{ fontSize: 16 }}>
-                Here's the move most owners make: book your 15-minute call now, while slots are open. The audit shows you what's costing you. The call is where Abraham walks through the fix, built around your actual numbers. Put it on the calendar for the week your audit arrives.
+                Here's the move most owners make: book your 30-minute call now, while slots are open. The audit shows you what's costing you. The call is where Abraham walks through the fix, built around your actual numbers. Put it on the calendar for the week your audit arrives.
               </p>
             </div>
             <div className="bg-ivory" style={{ minHeight: 720 }}>
               <iframe
-                title="Book your 15-minute strategy call with Soraia Designs"
+                title="Book your 30-minute strategy call with Soraia Designs"
                 src="https://calendly.com/soraiadesigns/str-consult?hide_gdpr_banner=1&utm_source=audit&utm_medium=audit-fastpath&utm_campaign=audit-relaunch-2026-07"
                 width="100%"
                 height="720"
