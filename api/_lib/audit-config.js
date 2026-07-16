@@ -1,6 +1,8 @@
 export const HUBSPOT_PORTAL_ID = '245704749'
 export const HUBSPOT_OWNER_ID = '163942674'
-export const DEFAULT_BREVO_LIST_ID = 8
+// List 3 = "STR Audit Leads" (the real list). Prod overrides via BREVO_AUDIT_LIST_ID.
+// Was 8 — a list that doesn't exist on the account (lists 2/3/4 only). (Maya, 2026-07-16)
+export const DEFAULT_BREVO_LIST_ID = 3
 export const DEFAULT_BREVO_PIPELINE_ID = '69ff8080a984860c6a8d003f'
 export const DEFAULT_BREVO_STAGE_NEW_ID = '4bd48361-2ce7-4bf0-aedb-fc48a902ba53'
 export const DEFAULT_FROM_EMAIL = 'audit@soraiadesigns.com'
