@@ -80,10 +80,28 @@ function updateForEvent(name) {
   }
 }
 
+// Properties that actually gate re-mailing. If the enum options are missing and
+// updateContact's non-atomic fallback salvages the harmless props but DROPS one of
+// these, the contact isn't really suppressed — so we must NOT report success. This
+// keeps the failure LOUD (the handler 500s) regardless of deploy order, instead of
+// the defensive salvage quietly turning a 500 into a false "you're unsubscribed"
+// 200 while the sequence keeps mailing. (audit_nurture_status is the one the
+// sequencer + Brevo suppression both read; hs_lead_status kept critical for parity.)
+const SUPPRESSION_CRITICAL_PROPS = ['audit_nurture_status', 'hs_lead_status']
+
 async function suppressByEmail(email, properties, blacklist = true) {
   const contact = await findContactByEmail(email)
   if (!contact?.id) return { ok: false, email, reason: 'contact_not_found' }
-  await updateContact(contact.id, properties)
+  const update = await updateContact(contact.id, properties)
+  // Detect a partial write that dropped a suppression-critical property.
+  if (update?._partial) {
+    const droppedCritical = (update.dropped || [])
+      .map((d) => d.property)
+      .filter((p) => SUPPRESSION_CRITICAL_PROPS.includes(p) && p in properties)
+    if (droppedCritical.length > 0) {
+      return { ok: false, email, reason: `suppression_prop_dropped:${droppedCritical.join(',')}` }
+    }
+  }
   if (blacklist) {
     try {
       await setBrevoContactEmailBlacklisted(email, true)

@@ -1,13 +1,30 @@
 import {
   ACTIVE_NURTURE_STATUSES,
   EMAIL_KEYS,
+  findEngagedDeal,
+  NEW_LEAD_DEAL_STAGE_ID,
   TERMINAL_LEAD_STATUSES,
   TERMINAL_NURTURE_STATUSES,
 } from './audit-config.js'
 import { buildEmailContent, daysSince, htmlToText, isoNow } from './audit-utils.js'
 import { upsertBrevoContact } from './brevo.js'
 import { sendGmailAs, hasRecentInboundFrom, isDryRun } from './gmail.js'
-import { findContactByEmail, updateContact } from './hubspot.js'
+import { findContactByEmail, getAssociatedDealStages, updateContact } from './hubspot.js'
+
+// The deal stages that keep a contact mailable: the New Lead id AND the stage that
+// fresh "- Audit" deals are actually created in. Coupling these two closes the
+// failure mode where a hardcoded-constant/env drift would flag every brand-new
+// lead's own deal as "engaged" and silently stall the whole ladder past EMAIL_1.
+const NON_ENGAGING_DEAL_STAGES = [NEW_LEAD_DEAL_STAGE_ID, process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID].filter(Boolean)
+if (
+  process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID &&
+  process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID !== NEW_LEAD_DEAL_STAGE_ID
+) {
+  console.warn(
+    `[nurture] HUBSPOT_AUDIT_DEAL_STAGE_ID (${process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID}) != NEW_LEAD_DEAL_STAGE_ID ` +
+      `(${NEW_LEAD_DEAL_STAGE_ID}) — deal-stage gate treats BOTH as New Lead; reconcile if the pipeline changed.`,
+  )
+}
 
 export function contactIsSuppressed(contact) {
   // Test rows never receive a nurture send. Mirrors the #55 audit-watcher guard
@@ -89,6 +106,30 @@ export async function sendNurtureEmail(contact, emailKey) {
     // replied. The next cron run retries the check.
     console.error('reply_check_failed_skip', emailKey, String(error))
     return { ok: false, skipped: true, reason: 'reply_check_failed' }
+  }
+
+  // Deal-stage gate (Abe's ask 2026-07-17) — LIVE path only. The setter/Abe works
+  // leads off the "New Lead" column in the HubSpot Sales Pipeline (schedules a
+  // call, marks Not a Fit, etc.). That lives on the DEAL, which the sequencer
+  // otherwise never reads. Any associated deal off New Lead = a human engaged =
+  // stop. No deal → don't suppress (a fresh lead's "- Audit" deal is created in
+  // New Lead at submit; a lead that never got one is unaffected). Fail CLOSED on
+  // lookup error, mirroring the reply gate above — a suppression signal we can't
+  // read is treated as "might be engaged, don't mail."
+  try {
+    const deals = await getAssociatedDealStages(freshContact.id)
+    // Any-pipeline check (deliberately not scoped to the default pipeline): a deal
+    // in ANY other pipeline — e.g. a future "- Full Service" deal — means the lead
+    // has moved past the audit funnel, so stopping audit nurture is the safe
+    // direction Maya asked for. New Lead (3427549892) exists only in the default
+    // pipeline, so a plain stage-id check already excludes other pipelines' deals.
+    const engagedDeal = findEngagedDeal(deals, NON_ENGAGING_DEAL_STAGES)
+    if (engagedDeal) {
+      return { ok: true, skipped: true, reason: 'deal_engaged', dealstage: engagedDeal.dealstage, pipeline: engagedDeal.pipeline }
+    }
+  } catch (error) {
+    console.error('deal_stage_check_failed_skip', emailKey, String(error))
+    return { ok: false, skipped: true, reason: 'deal_check_failed' }
   }
 
   // Keep the Brevo CONTACT in sync (segmentation + verified fallback), but Brevo

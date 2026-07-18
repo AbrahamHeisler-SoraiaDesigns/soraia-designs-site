@@ -20,7 +20,10 @@ async function hubspotFetch(path, { method = 'GET', body, search = false } = {})
   })
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`HubSpot ${method} ${path} failed ${res.status}: ${text}`)
+    const err = new Error(`HubSpot ${method} ${path} failed ${res.status}: ${text}`)
+    err.status = res.status
+    err.body = text
+    throw err
   }
   return res.status === 204 ? null : res.json()
 }
@@ -37,11 +40,44 @@ export async function findContactByEmail(email) {
   return { id: row.id, ...row.properties }
 }
 
+// Defensive non-atomic write (Maya's enum-drift spec, 2026-07-17). HubSpot
+// PATCHes are ATOMIC: one invalid property (e.g. an enum value the property
+// definition doesn't have yet) rejects the ENTIRE write with 400 VALIDATION_ERROR.
+// For a suppression/unsubscribe write that was fail-OPEN — the handler 500s and
+// the contact stays enrolled. On a validation error we retry each property alone
+// so the valid ones still land, and surface exactly which ones were dropped
+// instead of losing the whole write. NOTE: this is insurance, not the primary
+// fix — the real fix is keeping the property enums in sync with the code (add the
+// missing options). Deploy this WITH the enum fix, never as a substitute: on its
+// own it would silently drop the status prop and convert a loud 500 into a quiet
+// stays-enrolled. The loud console.error below is the tripwire for that drift.
 export async function updateContact(contactId, properties) {
-  return hubspotFetch(`/crm/v3/objects/contacts/${contactId}`, {
-    method: 'PATCH',
-    body: { properties },
-  })
+  const path = `/crm/v3/objects/contacts/${contactId}`
+  try {
+    return await hubspotFetch(path, { method: 'PATCH', body: { properties } })
+  } catch (err) {
+    const entries = Object.entries(properties || {})
+    // Only salvage genuine validation rejections, and only when there's more than
+    // one property to isolate. Anything else (auth, 404, 429, 5xx) rethrows.
+    if (err?.status !== 400 || entries.length <= 1) throw err
+    const applied = {}
+    const dropped = []
+    for (const [k, v] of entries) {
+      try {
+        await hubspotFetch(path, { method: 'PATCH', body: { properties: { [k]: v } } })
+        applied[k] = v
+      } catch (perErr) {
+        if (perErr?.status !== 400) throw perErr
+        dropped.push({ property: k, value: v, error: String(perErr.body || perErr.message || perErr) })
+      }
+    }
+    console.error(
+      `[hubspot] updateContact(${contactId}) atomic PATCH rejected; non-atomic fallback dropped invalid props ` +
+        `(likely enum drift — reconcile the property definition):`,
+      JSON.stringify(dropped),
+    )
+    return { _partial: true, appliedCount: Object.keys(applied).length, dropped }
+  }
 }
 
 export async function createContact(properties) {
@@ -272,6 +308,34 @@ function buildDealDescription(payload, driveFolderUrl, auditReportUrl) {
     payload.notes ? `Notes: ${payload.notes}` : null,
   ].filter(Boolean)
   return parts.join('\n')
+}
+
+// Deal-stage suppression lookup (Abe's ask 2026-07-17). Returns the associated
+// deals' stages so the sequencer can stop mailing a lead a human has engaged
+// (moved out of "New Lead"). Uses the v4 associations endpoint — the v3 shape
+// differs and threw `KeyError: toObjectId` per Maya's spec. Batch-reads dealstage
+// so it's one associations call + one batch read per contact per run (trivial at
+// current volume). Throws on any API error so the caller can fail CLOSED.
+export async function getAssociatedDealStages(contactId) {
+  const assoc = await hubspotFetch(`/crm/v4/objects/contacts/${contactId}/associations/deals`)
+  let dealIds = (assoc?.results || [])
+    .map((r) => r.toObjectId ?? r.to?.id ?? r.id)
+    .filter(Boolean)
+    .map(String)
+  if (dealIds.length === 0) return []
+  // HubSpot batch/read hard-caps inputs at 100. A contact with >100 associated
+  // deals isn't realistic here (a lead has 1–2), and the first page of the v4
+  // associations call isn't paginated — but cap defensively so an anomalous contact
+  // can't 400 the whole lookup (which would fail the send closed via the caller).
+  if (dealIds.length > 100) {
+    console.warn(`[hubspot] contact ${contactId} has ${dealIds.length} associated deals — checking first 100`)
+    dealIds = dealIds.slice(0, 100)
+  }
+  const batch = await hubspotFetch('/crm/v3/objects/deals/batch/read', {
+    method: 'POST',
+    body: { properties: ['dealstage', 'pipeline', 'dealname'], inputs: dealIds.map((id) => ({ id })) },
+  })
+  return (batch?.results || []).map((row) => ({ id: row.id, ...row.properties }))
 }
 
 export async function upsertAuditDeal({ contactId, payload, driveFolderUrl, auditReportUrl }) {

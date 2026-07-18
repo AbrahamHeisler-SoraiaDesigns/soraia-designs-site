@@ -73,6 +73,30 @@ export const EMAIL_KEYS = {
   RECOVERY_2: 'recovery_2_closing_file',
 }
 
+// Deal-stage suppression (Abe's ask 2026-07-17): the sequencer reads contact
+// props only, so moving a deal off "New Lead" in the Sales Pipeline was invisible
+// to it. New Lead is the ONLY stage that keeps a contact mailable — any other
+// stage (Appointment Scheduled, Not a Fit, Long Term FU, Closed Won/Lost, …) means
+// a human engaged the lead → stop the sequence. New Lead lives only in the default
+// Sales Pipeline, so a plain "stage !== this id" check also catches deals in other
+// pipelines (e.g. a Full Service deal) without needing to enumerate every pipeline.
+export const NEW_LEAD_DEAL_STAGE_ID = '3427549892'
+
+// Pure decision for the deal-stage gate (kept here — audit-config has no
+// side-effecting imports — so it's unit-testable in isolation). A deal counts as
+// "engaged" (a human moved it forward) only if it has a real stage that is NOT one
+// of the non-engaging stages. `nonEngagingStageIds` is the New Lead id PLUS the
+// stage fresh "- Audit" deals are actually created in (HUBSPOT_AUDIT_DEAL_STAGE_ID),
+// so a brand-new deal is never mistaken for engagement even if that env var ever
+// drifts from the hardcoded New Lead id. A falsy dealstage is treated as NOT
+// engaged on purpose: every real HubSpot deal has a stage, so an empty one is a
+// read anomaly (partial batch response), not evidence of engagement — the API-error
+// path in the caller already fails closed for genuine read failures.
+export function findEngagedDeal(deals, nonEngagingStageIds) {
+  const nonEngaging = new Set((nonEngagingStageIds || []).filter(Boolean))
+  return (deals || []).find((d) => d && d.dealstage && !nonEngaging.has(d.dealstage)) || null
+}
+
 export const ACTIVE_NURTURE_STATUSES = new Set(['active', 'not_enrolled'])
 export const TERMINAL_LEAD_STATUSES = new Set(['CALL_BOOKED', 'CALL_COMPLETED', 'OPEN_DEAL'])
 export const TERMINAL_NURTURE_STATUSES = new Set([
