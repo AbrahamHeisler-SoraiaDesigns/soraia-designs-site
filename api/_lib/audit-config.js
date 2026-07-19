@@ -5,9 +5,15 @@ export const HUBSPOT_OWNER_ID = '163942674'
 export const DEFAULT_BREVO_LIST_ID = 3
 export const DEFAULT_BREVO_PIPELINE_ID = '69ff8080a984860c6a8d003f'
 export const DEFAULT_BREVO_STAGE_NEW_ID = '4bd48361-2ce7-4bf0-aedb-fc48a902ba53'
-export const DEFAULT_FROM_EMAIL = 'audit@soraiadesigns.com'
-export const DEFAULT_FROM_NAME = 'Soraia Designs'
-export const DEFAULT_REPLY_TO = 'hello@soraiadesigns.com'
+// Audit-funnel email consolidates to abe@soraiadesigns.com (Gmail) per the ratified
+// 7/15 decision — Brevo/Resend demoted to verified fallback only. From-identity must
+// match the Gmail sequencer (gmail.js: "Abe Heisler <abe@>") so the sender never flips
+// mid-ladder between the delivery email (email_2) and nurture (email_3+). Reply-To is
+// abe@ so even a fallback send lands replies in Abe's inbox. Prod may still override
+// these via BREVO_SENDER_EMAIL/NAME + BREVO_REPLY_TO env (senderProfile()).
+export const DEFAULT_FROM_EMAIL = 'abe@soraiadesigns.com'
+export const DEFAULT_FROM_NAME = 'Abe Heisler'
+export const DEFAULT_REPLY_TO = 'abe@soraiadesigns.com'
 export const DEFAULT_CALENDLY_URL = 'https://calendly.com/soraiadesigns/str-design-audit-review'
 export const DEFAULT_PIXEL_ID = '966166489104332'
 

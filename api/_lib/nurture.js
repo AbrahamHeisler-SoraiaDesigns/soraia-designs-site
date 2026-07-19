@@ -56,7 +56,28 @@ export function nextEmailKey(contact) {
   return null
 }
 
-export async function sendNurtureEmail(contact, emailKey) {
+// Pure content resolver — the bespoke-override precedence, extracted so it's unit
+// testable without the network-bound send path. A plain-text `override`
+// { subject, text } from Cody's audit pipeline REPLACES the template, but ONLY
+// when BOTH fields are present — a half-filled override falls back to the template
+// rather than sending a blank subject/body. Returns { subject, text, source }.
+export function resolveEmailContent(emailKey, contact, override) {
+  if (override && override.subject && override.text) {
+    return { subject: override.subject, text: override.text, source: 'override' }
+  }
+  const email = buildEmailContent(emailKey, contact)
+  return { subject: email.subject, text: htmlToText(email.html), source: 'template' }
+}
+
+// `override` (optional) carries bespoke, per-property delivery copy from Cody's
+// audit pipeline: { subject, text } plain text. When present it REPLACES the
+// buildEmailContent template for THIS send only — every guard (idempotency,
+// sequence-state, reply gate, deal gate) and the flag-on-success write-back stay
+// identical, so audit_last_email_key still records `emailKey` (email_2_audit_ready)
+// and audit_status truthfulness is preserved. This is what folds Cody's formerly
+// off-system Brevo delivery back onto the single instrumented Gmail path. Absent
+// override → unchanged templated behavior (nurture cron, manual deliver form).
+export async function sendNurtureEmail(contact, emailKey, override = null) {
   const freshContact = await findContactByEmail(contact.email)
   if (!freshContact?.id) {
     return { ok: false, skipped: true, reason: 'contact_not_found' }
@@ -75,15 +96,14 @@ export async function sendNurtureEmail(contact, emailKey) {
     return { ok: true, skipped: true, reason: 'sequence_state_changed', expectedNextEmail }
   }
 
-  const email = buildEmailContent(emailKey, freshContact)
-  const text = htmlToText(email.html) // plain-text render (doc 14 spam-fingerprint finding)
+  const { subject, text } = resolveEmailContent(emailKey, freshContact, override)
 
   // DRY_RUN: produce the send-plan and STOP — NO external calls of any kind (no
   // Gmail reply-check, no Brevo upsert, no send). A true side-effect-free plan for
   // Maya to QA per email key before the first live run. The reply-gate below is a
   // live-send safety, applied when a real send actually fires.
   if (isDryRun()) {
-    return { ok: true, dryRun: true, emailKey, to: freshContact.email, subject: email.subject, text }
+    return { ok: true, dryRun: true, emailKey, to: freshContact.email, subject, text }
   }
 
   // Reply-aware pre-send gate (build-spec §4 / doc 15 §C) — LIVE path only. A
@@ -149,7 +169,7 @@ export async function sendNurtureEmail(contact, emailKey) {
   try {
     sendResult = await sendGmailAs({
       to: freshContact.email,
-      subject: email.subject,
+      subject,
       text,
     })
   } catch (error) {
