@@ -115,6 +115,14 @@ export default async function handler(req, res) {
   const email = String(body.email || '').trim().toLowerCase()
   const auditPdfUrl = String(body.audit_pdf_url || '').trim()
 
+  // Optional bespoke delivery copy (Cody's audit pipeline). Plain text only, to
+  // match the sequencer's spam-fingerprint discipline. Both fields required to
+  // override; either missing → templated email_2. `custom_subject`/`custom_body`
+  // are the pipeline's field names; `subject`/`text` accepted as aliases.
+  const customSubject = String(body.custom_subject || body.subject || '').trim()
+  const customBody = String(body.custom_body || body.text || '').trim()
+  const customEmail = customSubject && customBody ? { subject: customSubject, text: customBody } : null
+
   if (!email || !isHttpUrl(auditPdfUrl)) {
     const msg = 'A valid contact email and http(s) audit URL are both required.'
     return wantsHtml
@@ -150,7 +158,7 @@ export default async function handler(req, res) {
       audit_status: 'delivered',
       audit_pdf_url: auditPdfUrl,
     })
-    if (emailKey) released = await sendNurtureEmail(merged, emailKey)
+    if (emailKey) released = await sendNurtureEmail(merged, emailKey, customEmail)
   } catch (error) {
     const msg = `Delivery flip failed after contact lookup: ${String(error)}`
     return wantsHtml
@@ -167,6 +175,7 @@ export default async function handler(req, res) {
     audit_status: 'delivered',
     audit_pdf_url: auditPdfUrl,
     releasedEmailKey: emailKey || null,
+    customCopy: !!customEmail,
     released,
     at: isoNow(),
   }
