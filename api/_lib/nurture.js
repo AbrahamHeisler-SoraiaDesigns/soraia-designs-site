@@ -47,7 +47,7 @@ export function nextEmailKey(contact) {
 
   if (!lastKey) return EMAIL_KEYS.EMAIL_1
   if (lastKey === EMAIL_KEYS.EMAIL_1 && auditDelivered) return EMAIL_KEYS.EMAIL_2
-  if (lastKey === EMAIL_KEYS.EMAIL_2 && since >= 2) return EMAIL_KEYS.EMAIL_3
+  if (lastKey === EMAIL_KEYS.EMAIL_2 && since >= 1) return EMAIL_KEYS.EMAIL_3 // email_3 +2d→+1d (Abe-ratified 2026-07-19)
   if (lastKey === EMAIL_KEYS.EMAIL_3 && since >= 2) return EMAIL_KEYS.EMAIL_4
   if (lastKey === EMAIL_KEYS.EMAIL_4 && since >= 5) return EMAIL_KEYS.EMAIL_5
   // Drop-off recovery: Email 5 + 14d, then + 16d (= Email 5 + 30d). Suppressed on booking/reply.
