@@ -256,16 +256,16 @@ export function buildEmailContent(emailKey, contact) {
         html: htmlParagraphs([
           `Hi ${name},`,
           'A few people who\'ve gotten our audit have asked the same question:',
-          '<strong>How do you actually know whether spending $20k–$45k on a redesign pays back?</strong>',
-          'Here is the conservative model we use before recommending anything:',
+          '<strong>How do you actually know whether a redesign pays back?</strong>',
+          'Our full-service rate is $12 per square foot, design through install. On a 2,000 sq ft property that\'s $24,000. Real money, so here is the conservative model we run before recommending anything:',
         ]) + bullets([
           'Start with current ADR, occupancy, and estimated annual nights sold',
           'Model only the design moves that could plausibly affect rate or conversion',
           'Run a conservative lift case first - not the best-case scenario',
           'Compare projected incremental NOI against project cost and payback period',
-          'If the math is thin, the recommendation should get lighter - or not happen at all',
+          'If the math is thin, the recommendation gets lighter - virtual design at $5 per square foot instead of full service - or it doesn\'t happen at all',
         ]) + htmlParagraphs([
-          'We do use example ranges internally, but the real point is discipline: the property has to justify the spend, not the other way around.',
+          'The real point is discipline: the property has to justify the spend, not the other way around.',
           `If you want to plug your real numbers in together, <a href="${callUrl}">book the call</a>.`,
           'Abe',
         ]) + footer,
