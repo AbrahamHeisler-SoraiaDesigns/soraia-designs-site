@@ -54,9 +54,13 @@ const PORT = Number(process.env.OAUTH_CALLBACK_PORT || 5199)
 const REDIRECT = `http://localhost:${PORT}/oauth2callback`
 const STATE = randomBytes(16).toString('hex')
 // Keep Drive so the re-consented token still creates prospect folders; add gmail.send.
+// gmail.readonly added 2026-07-21: the reply gate (hasRecentInboundFrom) calls
+// messages.list, which gmail.send does NOT authorize. Without it, every live send
+// 403s inside the gate and fails CLOSED — the whole ladder stalls silently.
 const SCOPES = [
   'https://www.googleapis.com/auth/drive',
   'https://www.googleapis.com/auth/gmail.send',
+  'https://www.googleapis.com/auth/gmail.readonly',
 ]
 
 if (!CLIENT_ID || !CLIENT_SECRET) {
