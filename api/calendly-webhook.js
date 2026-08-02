@@ -1,8 +1,23 @@
 import crypto from 'node:crypto'
 import { CALENDLY_WEBHOOK_EVENT_TYPES } from './_lib/audit-config.js'
 import { sendResendEmail, upsertBrevoContact } from './_lib/brevo.js'
-import { findContactByEmail, updateContact } from './_lib/hubspot.js'
+import {
+  findContactByEmail,
+  updateContact,
+  createNote,
+  findNoteWithMarker,
+  findOpenDealForContact,
+  createConsultDeal,
+} from './_lib/hubspot.js'
 import { isoNow } from './_lib/audit-utils.js'
+import {
+  isTestBooking,
+  isStrConsultEvent,
+  enrichmentPropsFromInvitee,
+  buildIntakeNote,
+  consultDealName,
+  inviteeMarker,
+} from './_lib/calendly-enrichment.js'
 
 function rawBody(req) {
   if (!req.body) return ''
@@ -161,8 +176,20 @@ async function syncBooked(lookupEmail, inviteeEmail, eventType, payload) {
     audit_brevo_last_sync_at: isoNow(),
   }
 
-  await updateContact(contact.id, properties)
+  // Booking enrichment (Maya 7/16 + 7/26). Folded into the existing contact PATCH so a
+  // booking is one write, not two. Parsing is pure and can't throw here; an unknown
+  // property (booking_source_self_reported until it's created in the portal) is dropped
+  // individually by updateContact's defensive retry rather than failing the whole write.
+  const enrichment = isTestBooking(inviteeEmail, contact) ? {} : enrichmentPropsFromInvitee(payload)
+
+  await updateContact(contact.id, { ...properties, ...enrichment })
   await upsertBrevoContact({ ...contact, ...properties, id: contact.id, email: lookupEmail })
+
+  // Everything below is additive. It runs after the nurture-pause write has already
+  // landed and is individually guarded, because losing an intake note is recoverable
+  // and leaving a booked lead enrolled in the nurture sequence is not.
+  const enrichmentResult = await enrichBooking({ contact, inviteeEmail, eventType, payload })
+
   return {
     ok: true,
     action: 'booked',
@@ -172,7 +199,71 @@ async function syncBooked(lookupEmail, inviteeEmail, eventType, payload) {
     followupSent,
     followupError,
     auditReviewAnsweredNo: answeredNo,
+    enrichedProps: Object.keys(enrichment),
+    enrichment: enrichmentResult,
   }
+}
+
+async function enrichBooking({ contact, inviteeEmail, eventType, payload }) {
+  if (isTestBooking(inviteeEmail, contact)) {
+    return { skipped: true, reason: 'test_booking' }
+  }
+
+  const result = { noteId: null, noteSkipped: null, dealId: null, dealSkipped: null, errors: [] }
+  const inviteeUri = payload?.uri || null
+
+  try {
+    const marker = inviteeMarker(inviteeUri)
+    const existingNote = marker ? await findNoteWithMarker(contact.id, marker) : null
+    if (existingNote) {
+      result.noteSkipped = 'already_noted'
+      result.noteId = existingNote
+    } else {
+      const body = buildIntakeNote(payload, {
+        eventTypeLabel: eventType,
+        startTime: payload?.scheduled_event?.start_time || null,
+        inviteeUri,
+      })
+      const note = await createNote({ contactId: contact.id, body })
+      result.noteId = note.id
+    }
+  } catch (error) {
+    result.errors.push(`note: ${String(error)}`)
+  }
+
+  // Phase 2 — auto-create the consult deal. STR Launch Consult only; Audit Review /
+  // Next Steps and Follow Up bookings attach to a deal that already exists.
+  if (!isStrConsultEvent(eventType)) {
+    result.dealSkipped = 'not_str_consult'
+    return result
+  }
+
+  try {
+    const open = await findOpenDealForContact(contact.id, 'default')
+    if (open) {
+      result.dealSkipped = 'open_deal_exists'
+      result.dealId = open.id
+      return result
+    }
+    const fullName = String(payload?.name || '').trim() ||
+      [contact.firstname, contact.lastname].filter(Boolean).join(' ').trim()
+    if (!fullName) {
+      result.dealSkipped = 'no_name'
+      return result
+    }
+    const deal = await createConsultDeal({
+      contactId: contact.id,
+      dealname: consultDealName(fullName),
+      description: `Auto-created from Calendly booking (${eventType}).`,
+    })
+    result.dealId = deal.id
+  } catch (error) {
+    // Fail CLOSED: a spurious second deal on a live prospect is worse than a missing
+    // one Abe can add by hand.
+    result.errors.push(`deal: ${String(error)}`)
+  }
+
+  return result
 }
 
 async function syncCanceled(email, payload) {
