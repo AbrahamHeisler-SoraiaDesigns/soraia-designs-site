@@ -338,6 +338,99 @@ export async function getAssociatedDealStages(contactId) {
   return (batch?.results || []).map((row) => ({ id: row.id, ...row.properties }))
 }
 
+// ── Calendly booking enrichment (Maya 7/16 spec) ──────────────────────────────
+
+// Note -> Contact association. HUBSPOT_DEFINED typeId 202 is the note-to-contact
+// edge; a note created without it is orphaned and invisible on the record.
+const NOTE_TO_CONTACT_TYPE_ID = 202
+
+/**
+ * Idempotency for the intake note. Calendly redelivers a webhook when we don't 200
+ * cleanly, and there is no natural unique key on a HubSpot note — so we stamp the
+ * invitee URI into the note body and look for it before writing another. Returns the
+ * matching note id, or null. Failures return null (write the note) rather than throw:
+ * a duplicate note is noise, a missing one loses the intake.
+ */
+export async function findNoteWithMarker(contactId, marker) {
+  if (!marker) return null
+  try {
+    const assoc = await hubspotFetch(`/crm/v4/objects/contacts/${contactId}/associations/notes`)
+    const ids = (assoc?.results || [])
+      .map((r) => r.toObjectId ?? r.to?.id ?? r.id)
+      .filter(Boolean)
+      .map(String)
+      .slice(0, 100)
+    if (ids.length === 0) return null
+    const batch = await hubspotFetch('/crm/v3/objects/notes/batch/read', {
+      method: 'POST',
+      body: { properties: ['hs_note_body'], inputs: ids.map((id) => ({ id })) },
+    })
+    const hit = (batch?.results || []).find((row) =>
+      String(row?.properties?.hs_note_body || '').includes(marker)
+    )
+    return hit?.id || null
+  } catch (err) {
+    console.warn(`[hubspot] note dedupe lookup failed for contact ${contactId}: ${String(err)}`)
+    return null
+  }
+}
+
+export async function createNote({ contactId, body }) {
+  const created = await hubspotFetch('/crm/v3/objects/notes', {
+    method: 'POST',
+    body: {
+      properties: {
+        hs_note_body: String(body || ''),
+        hs_timestamp: isoNow(),
+      },
+      associations: [{
+        to: { id: String(contactId) },
+        types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: NOTE_TO_CONTACT_TYPE_ID }],
+      }],
+    },
+  })
+  return { id: created?.id || null }
+}
+
+// The default pipeline's two terminal stages. A deal sitting in either is finished,
+// so it must NOT suppress a new consult deal — a past-customer rebooking is a real
+// new opportunity, not a duplicate.
+const CLOSED_STAGES = new Set(['closedwon', 'closedlost'])
+
+/**
+ * Reschedule/repeat-booking guard for the consult deal. Maya's spec: skip if the
+ * contact already has an OPEN deal in the default pipeline. Fails CLOSED — if the
+ * association lookup throws we skip deal creation rather than risk a duplicate,
+ * because a spurious second deal on a live prospect is worse than a missing one
+ * Abe can add by hand.
+ */
+export async function findOpenDealForContact(contactId, pipelineId = 'default') {
+  const deals = await getAssociatedDealStages(contactId)
+  return deals.find((d) => d.pipeline === pipelineId && !CLOSED_STAGES.has(String(d.dealstage || ''))) || null
+}
+
+export async function createConsultDeal({ contactId, dealname, pipeline = 'default', stage = 'appointmentscheduled', description }) {
+  const created = await hubspotFetch('/crm/v3/objects/deals', {
+    method: 'POST',
+    body: {
+      properties: {
+        dealname,
+        pipeline,
+        dealstage: stage,
+        hubspot_owner_id: HUBSPOT_OWNER_ID,
+        ...(description ? { description } : {}),
+      },
+      associations: contactId
+        ? [{
+            to: { id: String(contactId) },
+            types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }],
+          }]
+        : undefined,
+    },
+  })
+  return { id: created.id, url: buildDealUrl(created.id), created: true }
+}
+
 export async function upsertAuditDeal({ contactId, payload, driveFolderUrl, auditReportUrl }) {
   const { pipeline, stage } = requireDealConfig()
   const dealname = auditDealName(payload)
