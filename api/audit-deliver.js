@@ -11,15 +11,24 @@
 //
 // Auth: AUDIT_DELIVER_SECRET (falls back to CRON_SECRET). If neither is set the
 // endpoint is disabled (503) — it never runs open. GET renders a tiny form when
-// the key is supplied in the query; POST performs the flip.
+// the key is supplied in the query; POST performs the send.
 //
-// Suppression is honored automatically: sendNurtureEmail() re-derives the next
-// step via nextEmailKey(), which returns null for any terminal/unsubscribed/
-// bounced/booked contact — so a suppressed lead gets the status flip (for
-// reporting) but no email is sent.
+// ORDERING (fixed 2026-08-04): the send happens FIRST and the status flip is written
+// only after Gmail returns a message id, in the same updateContact as the send flags.
+// Previously the flip ran first, so any of the eight no-send paths in
+// sendNurtureEmail — or a Gmail failure — left `audit_status=delivered` on a contact
+// who received nothing. That is how Angela Petri's audit sat undelivered for eight
+// weeks while the CRM reported it delivered. A skip now writes NOTHING and returns 409.
+//
+// SUPPRESSION: a delivery is not a marketing touch — it is the deliverable the lead
+// asked for. The reply gate, deal gate and sequence gate are bypassed here (they still
+// govern emails 3-5). Only a hard opt-out — unsubscribed / bounced / complained, or a
+// test row — blocks a delivery. Delivering to an already-paused lead sends the audit
+// but preserves the pause, so the follow-up ladder stays off and a human keeps the lead.
 
-import { nextEmailKey, sendNurtureEmail } from './_lib/nurture.js'
-import { findContactByEmail, updateContact, buildContactUrl } from './_lib/hubspot.js'
+import { sendNurtureEmail } from './_lib/nurture.js'
+import { EMAIL_KEYS } from './_lib/audit-config.js'
+import { findContactByEmail, buildContactUrl } from './_lib/hubspot.js'
 import { isoNow } from './_lib/audit-utils.js'
 
 function deliverSecret() {
@@ -146,53 +155,68 @@ export default async function handler(req, res) {
       : res.status(404).json({ ok: false, message: msg })
   }
 
-  // 1) Flip delivery state — the two fields nextEmailKey() gates email 2 on.
-  // 2) Release the next nurture email. Re-derive from the (now-delivered) state
-  //    rather than hardcoding email 2, so an unconfirmed or suppressed contact is
-  //    handled correctly. sendNurtureEmail re-fetches fresh + self-guards.
-  const merged = { ...contact, audit_status: 'delivered', audit_pdf_url: auditPdfUrl }
-  const emailKey = nextEmailKey(merged)
+  // SEND FIRST, FLIP ON SUCCESS.
+  //
+  // This used to run the other way round: updateContact(delivered) and THEN the send.
+  // sendNurtureEmail has eight paths that send nothing, plus a throw on Gmail failure,
+  // and every one of them left audit_status='delivered' on a contact who received
+  // nothing. Worst case was the reply gate: it writes paused_reply, which is terminal,
+  // so the lead was locked out of ever receiving the audit while the CRM reported it
+  // delivered. Angela Petri sat in that state for eight weeks.
+  //
+  // The flip now travels as `pendingProps` and is written by sendNurtureEmail in the
+  // same updateContact as the send flags, only after Gmail returns a message id.
+  const pendingProps = { audit_status: 'delivered', audit_pdf_url: auditPdfUrl }
+  const merged = { ...contact, ...pendingProps }
+  const emailKey = EMAIL_KEYS.EMAIL_2
   let released = null
   try {
-    await updateContact(contact.id, {
-      audit_status: 'delivered',
-      audit_pdf_url: auditPdfUrl,
-    })
-    if (emailKey) released = await sendNurtureEmail(merged, emailKey, customEmail)
+    released = await sendNurtureEmail(merged, emailKey, customEmail, { pendingProps, isDelivery: true })
   } catch (error) {
-    const msg = `Delivery flip failed after contact lookup: ${String(error)}`
+    const msg = `Delivery send failed — nothing was written to HubSpot: ${String(error)}`
     return wantsHtml
-      ? res.status(502).send(page('Flip failed', `<h1 class="err">Flip failed</h1><p>${esc(msg)}</p>`))
-      : res.status(502).json({ ok: false, message: msg, contactId: contact.id })
+      ? res.status(502).send(page('Send failed', `<h1 class="err">Send failed</h1><p>${esc(msg)}</p><p>The contact was <strong>not</strong> marked delivered.</p>`))
+      : res.status(502).json({ ok: false, message: msg, contactId: contact.id, delivered: false })
   }
+
+  const didSend = !!(released?.ok && !released.skipped)
 
   const contactUrl = buildContactUrl(contact.id)
   const result = {
-    ok: true,
+    ok: didSend,
+    delivered: didSend,
     email,
     contactId: contact.id,
     contactUrl,
-    audit_status: 'delivered',
-    audit_pdf_url: auditPdfUrl,
-    releasedEmailKey: emailKey || null,
+    // Report what is actually true in HubSpot now — not what we hoped for.
+    audit_status: didSend ? 'delivered' : (contact.audit_status || 'requested'),
+    audit_pdf_url: didSend ? auditPdfUrl : (contact.audit_pdf_url || null),
+    releasedEmailKey: didSend ? emailKey : null,
     customCopy: !!customEmail,
     released,
     at: isoNow(),
   }
 
   if (wantsHtml) {
-    const sent = emailKey && released?.ok && !released?.skipped
-    const note = sent
-      ? `Released <code>${emailKey}</code>.`
-      : emailKey
-        ? `Next email <code>${esc(emailKey)}</code> was not sent (${esc(released?.reason || released?.error || 'suppressed/guarded')}). Status still flipped; the daily cron will pick it up when eligible.`
-        : 'Contact is suppressed or terminal, so no email was released. Status flipped for reporting.'
-    return res.status(200).send(page('Delivered', `
-      <h1 class="ok">Audit marked delivered</h1>
-      <p><strong>${esc(email)}</strong> &rarr; <code>audit_status=delivered</code>. ${note}</p>
+    if (didSend) {
+      return res.status(200).send(page('Delivered', `
+        <h1 class="ok">Audit sent and marked delivered</h1>
+        <p>The audit went out to <strong>${esc(email)}</strong> as <code>${esc(emailKey)}</code>, and
+           <code>audit_status=delivered</code> was written in the same commit.</p>
+        <p><a href="${contactUrl}" target="_blank" rel="noopener">Open the HubSpot contact &rarr;</a></p>
+        <p><a href="/api/audit-deliver?key=${encodeURIComponent(body.key)}">Deliver another &rarr;</a></p>`))
+    }
+    const reason = esc(released?.reason || released?.error || 'suppressed/guarded')
+    return res.status(409).send(page('Not delivered', `
+      <h1 class="err">NOT delivered — nothing was sent</h1>
+      <p>No email reached <strong>${esc(email)}</strong> (<code>${reason}</code>), so
+         <strong>nothing was written to HubSpot</strong>. The contact is unchanged and is
+         <em>not</em> marked delivered.</p>
+      <p>This will not retry itself. Send the audit by hand (reply in-thread from abe@),
+         then run this form again to record it.</p>
       <p><a href="${contactUrl}" target="_blank" rel="noopener">Open the HubSpot contact &rarr;</a></p>
-      <p><a href="/api/audit-deliver?key=${encodeURIComponent(body.key)}">Deliver another &rarr;</a></p>`))
+      <p><a href="/api/audit-deliver?key=${encodeURIComponent(body.key)}">Try another &rarr;</a></p>`))
   }
 
-  return res.status(200).json(result)
+  return res.status(didSend ? 200 : 409).json(result)
 }

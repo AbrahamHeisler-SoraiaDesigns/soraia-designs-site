@@ -116,6 +116,19 @@ export const TERMINAL_NURTURE_STATUSES = new Set([
   'paused_manual',
 ])
 
+// Hard opt-outs — the ONLY states that block delivering the audit itself.
+//
+// The audit is a deliverable the lead explicitly requested, not a marketing touch.
+// `paused_reply`, `paused_booked`, `paused_manual`, `completed` and an engaged deal
+// all mean "a human is handling this lead" — which is a reason to stop the FOLLOW-UP
+// ladder (emails 3-5), never a reason to withhold the thing they asked for. Only a
+// genuine opt-out or an undeliverable address blocks a delivery.
+export const DELIVERY_BLOCKING_NURTURE_STATUSES = new Set([
+  'unsubscribed',
+  'bounced',
+  'complained',
+])
+
 export const CALENDLY_WEBHOOK_EVENT_TYPES = new Set(['invitee.created', 'invitee.canceled'])
 
 export const BREVO_TAGS = {

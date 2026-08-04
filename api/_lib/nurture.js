@@ -1,5 +1,6 @@
 import {
   ACTIVE_NURTURE_STATUSES,
+  DELIVERY_BLOCKING_NURTURE_STATUSES,
   EMAIL_KEYS,
   findEngagedDeal,
   NEW_LEAD_DEAL_STAGE_ID,
@@ -35,6 +36,24 @@ export function contactIsSuppressed(contact) {
   return TERMINAL_LEAD_STATUSES.has(contact.hs_lead_status || '') || TERMINAL_NURTURE_STATUSES.has(contact.audit_nurture_status || '')
 }
 
+// Can we send the AUDIT ITSELF to this contact? Deliberately far more permissive
+// than nextEmailKey(): a lead who replied, booked, or got worked by a human still
+// gets the deliverable they asked for. Only a real opt-out or a test row blocks it.
+//
+// This exists because the old behavior was a permanent lockout: the reply gate wrote
+// audit_nurture_status='paused_reply', which is in TERMINAL_NURTURE_STATUSES, which
+// makes nextEmailKey() return null on every subsequent run — forever. Any lead who
+// replied to the confirmation email (to fix an address, ask a question) could never
+// be sent their audit through any automated path, while audit_status read 'delivered'.
+export function deliveryIsBlocked(contact) {
+  if (contact.audit_test === 'true') return { blocked: true, reason: 'test_contact' }
+  const status = contact.audit_nurture_status || ''
+  if (DELIVERY_BLOCKING_NURTURE_STATUSES.has(status)) {
+    return { blocked: true, reason: `opted_out:${status}` }
+  }
+  return { blocked: false, reason: null }
+}
+
 export function nextEmailKey(contact) {
   if (contactIsSuppressed(contact)) return null
 
@@ -54,6 +73,20 @@ export function nextEmailKey(contact) {
   if (lastKey === EMAIL_KEYS.EMAIL_5 && since >= 14) return EMAIL_KEYS.RECOVERY_1
   if (lastKey === EMAIL_KEYS.RECOVERY_1 && since >= 16) return EMAIL_KEYS.RECOVERY_2
   return null
+}
+
+// What audit_nurture_status should a successful send leave behind?
+//
+// The subtle case is delivering to a lead who is already paused (replied, booked, or
+// manually held). Delivering the audit must NOT silently re-activate their ladder —
+// they replied or booked precisely because a human took over, and re-arming emails
+// 3-5 is the Esther collision the reply gate was built to prevent. So: send the
+// audit, keep the pause. Abe drives from there.
+export function resolveNextNurtureStatus(emailKey, contact, isDelivery = false) {
+  if (emailKey === EMAIL_KEYS.RECOVERY_2) return 'completed'
+  const current = contact.audit_nurture_status || ''
+  if (isDelivery && TERMINAL_NURTURE_STATUSES.has(current)) return current
+  return 'active'
 }
 
 // Pure content resolver — the bespoke-override precedence, extracted so it's unit
@@ -77,23 +110,46 @@ export function resolveEmailContent(emailKey, contact, override) {
 // and audit_status truthfulness is preserved. This is what folds Cody's formerly
 // off-system Brevo delivery back onto the single instrumented Gmail path. Absent
 // override → unchanged templated behavior (nurture cron, manual deliver form).
-export async function sendNurtureEmail(contact, emailKey, override = null) {
-  const freshContact = await findContactByEmail(contact.email)
-  if (!freshContact?.id) {
+// `opts.pendingProps` — contact properties that this send is ABOUT to make true but
+// which must not be written until the send actually succeeds (the delivery flip:
+// audit_status='delivered' + audit_pdf_url). They are merged onto the fresh contact
+// for gating decisions, and written in the same updateContact as the send flags on
+// success. If the send skips or throws, they are never written — so the CRM can no
+// longer claim an audit was delivered when nothing left the building.
+//
+// `opts.isDelivery` — this send IS the audit deliverable (email_2), triggered by a
+// human via /api/audit-deliver. Bypasses the sequence, reply, and deal gates, which
+// exist to protect the follow-up ladder and have no business withholding a requested
+// deliverable. Idempotency and hard opt-outs still apply.
+export async function sendNurtureEmail(contact, emailKey, override = null, opts = {}) {
+  const { pendingProps = null, isDelivery = false } = opts
+  const found = await findContactByEmail(contact.email)
+  if (!found?.id) {
     return { ok: false, skipped: true, reason: 'contact_not_found' }
   }
+  const freshContact = pendingProps ? { ...found, ...pendingProps } : found
 
-  // Idempotency: don't re-send the same step inside a tight window.
+  // Idempotency: don't re-send the same step inside a tight window. Applies to
+  // deliveries too — a double-submit of the deliver form must not double-send.
   const duplicateWindowDays = 20 / 1440
   const alreadySentThisStep = freshContact.audit_last_email_key === emailKey && daysSince(freshContact.audit_last_email_sent_at) < duplicateWindowDays
   if (alreadySentThisStep) {
     return { ok: true, skipped: true, reason: 'duplicate_recent_send' }
   }
 
-  // The sequence must still expect exactly this step.
-  const expectedNextEmail = nextEmailKey(freshContact)
-  if (expectedNextEmail !== emailKey) {
-    return { ok: true, skipped: true, reason: 'sequence_state_changed', expectedNextEmail }
+  // Hard opt-out check — the only suppression a delivery honors.
+  if (isDelivery) {
+    const { blocked, reason } = deliveryIsBlocked(freshContact)
+    if (blocked) return { ok: true, skipped: true, reason }
+  }
+
+  // The sequence must still expect exactly this step. A delivery is authoritative
+  // (Abe is holding the audit and pressing send), so it does not consult the ladder.
+  if (!isDelivery) {
+    const expectedNextEmail = nextEmailKey(freshContact)
+    if (expectedNextEmail !== emailKey) {
+      return { ok: true, skipped: true, reason: 'sequence_state_changed', expectedNextEmail }
+    }
   }
 
   const { subject, text } = resolveEmailContent(emailKey, freshContact, override)
@@ -110,22 +166,28 @@ export async function sendNurtureEmail(contact, emailKey, override = null) {
   // manual pause, or ANY inbound reply from the lead, stops the send — this is
   // what makes the Esther collision (goodbye → cold re-pitch) structurally
   // impossible. CALL_BOOKED / terminal states are filtered upstream by nextEmailKey.
-  if (freshContact.audit_nurture_status === 'paused_manual') {
-    return { ok: true, skipped: true, reason: 'paused_manual' }
-  }
-  try {
-    if (await hasRecentInboundFrom(freshContact.email)) {
-      await updateContact(freshContact.id, {
-        audit_nurture_status: 'paused_reply',
-        audit_brevo_last_sync_at: isoNow(),
-      })
-      return { ok: true, skipped: true, reason: 'lead_replied' }
+  //
+  // NOT applied to deliveries: a reply is the strongest possible signal the lead
+  // still wants the audit. Withholding it because they engaged inverts the intent,
+  // and — because paused_reply is terminal — used to lock them out permanently.
+  if (!isDelivery) {
+    if (freshContact.audit_nurture_status === 'paused_manual') {
+      return { ok: true, skipped: true, reason: 'paused_manual' }
     }
-  } catch (error) {
-    // Fail CLOSED: better to skip a send than risk mailing a lead who already
-    // replied. The next cron run retries the check.
-    console.error('reply_check_failed_skip', emailKey, String(error))
-    return { ok: false, skipped: true, reason: 'reply_check_failed' }
+    try {
+      if (await hasRecentInboundFrom(freshContact.email)) {
+        await updateContact(freshContact.id, {
+          audit_nurture_status: 'paused_reply',
+          audit_brevo_last_sync_at: isoNow(),
+        })
+        return { ok: true, skipped: true, reason: 'lead_replied' }
+      }
+    } catch (error) {
+      // Fail CLOSED: better to skip a send than risk mailing a lead who already
+      // replied. The next cron run retries the check.
+      console.error('reply_check_failed_skip', emailKey, String(error))
+      return { ok: false, skipped: true, reason: 'reply_check_failed' }
+    }
   }
 
   // Deal-stage gate (Abe's ask 2026-07-17) — LIVE path only. The setter/Abe works
@@ -136,20 +198,25 @@ export async function sendNurtureEmail(contact, emailKey, override = null) {
   // New Lead at submit; a lead that never got one is unaffected). Fail CLOSED on
   // lookup error, mirroring the reply gate above — a suppression signal we can't
   // read is treated as "might be engaged, don't mail."
-  try {
-    const deals = await getAssociatedDealStages(freshContact.id)
-    // Any-pipeline check (deliberately not scoped to the default pipeline): a deal
-    // in ANY other pipeline — e.g. a future "- Full Service" deal — means the lead
-    // has moved past the audit funnel, so stopping audit nurture is the safe
-    // direction Maya asked for. New Lead (3427549892) exists only in the default
-    // pipeline, so a plain stage-id check already excludes other pipelines' deals.
-    const engagedDeal = findEngagedDeal(deals, NON_ENGAGING_DEAL_STAGES)
-    if (engagedDeal) {
-      return { ok: true, skipped: true, reason: 'deal_engaged', dealstage: engagedDeal.dealstage, pipeline: engagedDeal.pipeline }
+  //
+  // NOT applied to deliveries: a lead already worked into a later stage is a lead
+  // who should certainly receive the audit they asked for.
+  if (!isDelivery) {
+    try {
+      const deals = await getAssociatedDealStages(freshContact.id)
+      // Any-pipeline check (deliberately not scoped to the default pipeline): a deal
+      // in ANY other pipeline — e.g. a future "- Full Service" deal — means the lead
+      // has moved past the audit funnel, so stopping audit nurture is the safe
+      // direction Maya asked for. New Lead (3427549892) exists only in the default
+      // pipeline, so a plain stage-id check already excludes other pipelines' deals.
+      const engagedDeal = findEngagedDeal(deals, NON_ENGAGING_DEAL_STAGES)
+      if (engagedDeal) {
+        return { ok: true, skipped: true, reason: 'deal_engaged', dealstage: engagedDeal.dealstage, pipeline: engagedDeal.pipeline }
+      }
+    } catch (error) {
+      console.error('deal_stage_check_failed_skip', emailKey, String(error))
+      return { ok: false, skipped: true, reason: 'deal_check_failed' }
     }
-  } catch (error) {
-    console.error('deal_stage_check_failed_skip', emailKey, String(error))
-    return { ok: false, skipped: true, reason: 'deal_check_failed' }
   }
 
   // Keep the Brevo CONTACT in sync (segmentation + verified fallback), but Brevo
@@ -182,13 +249,15 @@ export async function sendNurtureEmail(contact, emailKey, override = null) {
 
   // FLAG-ON-SUCCESS (the flag-lies fix): write the send flags ONLY now that Gmail
   // returned a real message id. Because a failed send throws above and never
-  // reaches here, a non-send can no longer record itself as sent.
-  const nextNurtureStatus = emailKey === EMAIL_KEYS.RECOVERY_2 ? 'completed' : 'active'
+  // reaches here, a non-send can no longer record itself as sent. `pendingProps`
+  // (the delivery flip) rides in the SAME write, so audit_status='delivered' is
+  // now impossible without a real message id behind it.
   const sentAt = isoNow()
   const props = {
+    ...(pendingProps || {}),
     audit_last_email_key: emailKey,
     audit_last_email_sent_at: sentAt,
-    audit_nurture_status: nextNurtureStatus,
+    audit_nurture_status: resolveNextNurtureStatus(emailKey, freshContact, isDelivery),
     audit_brevo_sync_status: brevoUpsertError ? 'errored' : 'synced',
     audit_brevo_last_sync_at: sentAt,
   }
