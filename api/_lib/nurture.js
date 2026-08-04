@@ -1,5 +1,6 @@
 import {
   ACTIVE_NURTURE_STATUSES,
+  DELIVERY_BLOCKING_LEAD_STATUSES,
   DELIVERY_BLOCKING_NURTURE_STATUSES,
   EMAIL_KEYS,
   findEngagedDeal,
@@ -50,6 +51,12 @@ export function deliveryIsBlocked(contact) {
   const status = contact.audit_nurture_status || ''
   if (DELIVERY_BLOCKING_NURTURE_STATUSES.has(status)) {
     return { blocked: true, reason: `opted_out:${status}` }
+  }
+  // Checked independently of audit_nurture_status: the two fields are written by
+  // different systems and either one saying "stop" is authoritative.
+  const leadStatus = contact.hs_lead_status || ''
+  if (DELIVERY_BLOCKING_LEAD_STATUSES.has(leadStatus)) {
+    return { blocked: true, reason: `opted_out:${leadStatus}` }
   }
   return { blocked: false, reason: null }
 }

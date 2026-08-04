@@ -122,11 +122,32 @@ export const TERMINAL_NURTURE_STATUSES = new Set([
 // `paused_reply`, `paused_booked`, `paused_manual`, `completed` and an engaged deal
 // all mean "a human is handling this lead" — which is a reason to stop the FOLLOW-UP
 // ladder (emails 3-5), never a reason to withhold the thing they asked for. Only a
-// genuine opt-out or an undeliverable address blocks a delivery.
+// genuine opt-out, an undeliverable address, or an explicit disqualification blocks
+// a delivery.
+//
+// `unqualified` is in this set on Maya's review of PR #36 (2026-08-04): suppression
+// and disqualification sit ABOVE every gate and must block email_2 too. Ed Roberts
+// (ed@knerealty.com, marked Not-a-Fit 7/17, audit_nurture_status='unqualified') must
+// never receive a delivery. Without this the delivery-gate exemption would have
+// re-opened a path to exactly the leads a human already ruled out.
 export const DELIVERY_BLOCKING_NURTURE_STATUSES = new Set([
   'unsubscribed',
   'bounced',
   'complained',
+  'unqualified',
+])
+
+// The same rule expressed on the sales-pipeline field. A lead disqualified or opted
+// out on hs_lead_status is blocked regardless of what audit_nurture_status says —
+// the two are written by different systems and either one saying "stop" means stop.
+// Deliberately EXCLUDES CALL_BOOKED / CALL_COMPLETED / OPEN_DEAL: those stop the
+// nurture ladder but a lead deep in conversation still gets the artifact they asked
+// for (Maya: "Somerled-stage leads still get the audit").
+export const DELIVERY_BLOCKING_LEAD_STATUSES = new Set([
+  'UNQUALIFIED',
+  'UNSUBSCRIBED',
+  'BOUNCED',
+  'SPAM_COMPLAINT',
 ])
 
 export const CALENDLY_WEBHOOK_EVENT_TYPES = new Set(['invitee.created', 'invitee.canceled'])
