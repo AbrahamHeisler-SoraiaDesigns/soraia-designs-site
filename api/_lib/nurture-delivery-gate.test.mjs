@@ -56,6 +56,42 @@ t('a test row IS blocked', () => {
 })
 
 // ---------------------------------------------------------------------------
+// Maya's carve-out on PR #36 review: disqualification and suppression sit ABOVE
+// every gate and must block email_2 too. Without this, exempting delivery from the
+// reply/deal gates would re-open a path to leads a human explicitly ruled out.
+// ---------------------------------------------------------------------------
+
+t('CARVE-OUT: audit_nurture_status=unqualified IS blocked', () => {
+  const r = deliveryIsBlocked({ audit_nurture_status: 'unqualified' })
+  assert.strictEqual(r.blocked, true)
+  assert.match(r.reason, /unqualified/)
+})
+t('CARVE-OUT: Ed Roberts (Not-a-Fit 7/17) can never receive a delivery', () => {
+  // Real shape: hs_lead_status=NURTURE_FATIGUED + audit_nurture_status=unqualified.
+  const roberts = { hs_lead_status: 'NURTURE_FATIGUED', audit_nurture_status: 'unqualified' }
+  assert.strictEqual(deliveryIsBlocked(roberts).blocked, true)
+})
+t('CARVE-OUT: hs_lead_status=UNQUALIFIED IS blocked on its own', () => {
+  // The two fields are written by different systems; either saying stop means stop.
+  assert.strictEqual(deliveryIsBlocked({ hs_lead_status: 'UNQUALIFIED' }).blocked, true)
+})
+t('CARVE-OUT: hs_lead_status UNSUBSCRIBED / BOUNCED / SPAM_COMPLAINT are blocked', () => {
+  for (const s of ['UNSUBSCRIBED', 'BOUNCED', 'SPAM_COMPLAINT']) {
+    assert.strictEqual(deliveryIsBlocked({ hs_lead_status: s }).blocked, true, s)
+  }
+})
+t('CARVE-OUT does NOT overreach: a booked lead still gets the artifact', () => {
+  // Maya: "Somerled-stage leads still get the audit." CALL_BOOKED stops the ladder,
+  // never the deliverable.
+  for (const s of ['CALL_BOOKED', 'CALL_COMPLETED', 'OPEN_DEAL']) {
+    assert.strictEqual(deliveryIsBlocked({ hs_lead_status: s }).blocked, false, s)
+  }
+})
+t('CARVE-OUT does NOT overreach: NURTURE_FATIGUED alone still gets the artifact', () => {
+  assert.strictEqual(deliveryIsBlocked({ hs_lead_status: 'NURTURE_FATIGUED' }).blocked, false)
+})
+
+// ---------------------------------------------------------------------------
 // The Angela Petri shape — proves the old lockout and the new escape hatch
 // ---------------------------------------------------------------------------
 
