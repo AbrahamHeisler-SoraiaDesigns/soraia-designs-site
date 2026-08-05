@@ -11,7 +11,7 @@
 // Uses the Sheets API with the existing `drive` OAuth scope — Sheets accepts it, so
 // no re-consent was needed.
 import { getAccessToken } from './drive.js'
-import { QUESTIONS, formatAnswer } from './intake-questions.js'
+import { QUESTIONS, formatAnswer, isQuestionActive } from './intake-questions.js'
 
 const TAB = 'Submissions'
 
@@ -55,7 +55,11 @@ export function buildRowMap({ submittedAt, dealId, clientName, briefUrl, folderU
     'Client Folder': folderUrl || '',
   }
   for (const q of QUESTIONS) {
-    const value = answers[q.id]
+    // A question hidden by its own condition is written blank even if a stale
+    // answer is still in the payload — answer the murals follow-up, then switch
+    // murals to No, and the old "Yes" would otherwise land in the Sheet while the
+    // brief (which already checks this) correctly omits it.
+    const value = isQuestionActive(q, answers) ? answers[q.id] : null
     row[q.label] = value == null ? '' : formatAnswer(q, value)
   }
   return row

@@ -31,6 +31,11 @@ function PixelRouteTracker() {
       isInitial.current = false
       return
     }
+    // Never on /intake: that URL carries a per-client capability token and the
+    // pixel reports document.location. index.html stops the tag loading on a hard
+    // landing; this stops a client-side navigation into the route, where fbq
+    // already exists from the previous page. Both guards are needed.
+    if (/^\/intake(\/|$)/.test(pathname)) return
     if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
       window.fbq('track', 'PageView')
     }
