@@ -76,8 +76,31 @@ export function deliveryIsBlocked(contact) {
 export function isReengageRelease(contact) {
   if (contact.audit_test === 'true') return false
   if (!reengageIsDue(contact)) return false
+  // deliveryIsBlocked() covers BOTH hard-opt-out lanes — the nurture statuses
+  // (unsubscribed / bounced / complained / unqualified) and the lead statuses
+  // (UNQUALIFIED / UNSUBSCRIBED / BOUNCED / SPAM_COMPLAINT). Those are the real
+  // opt-outs, and no date set by anyone releases them.
   if (deliveryIsBlocked(contact).blocked) return false
-  if (TERMINAL_LEAD_STATUSES.has(contact.hs_lead_status || '')) return false
+  // TERMINAL_LEAD_STATUSES (CALL_BOOKED / CALL_COMPLETED / OPEN_DEAL) is deliberately
+  // NOT checked here. This is a correction to the first cut of this feature.
+  //
+  // Those statuses stop the ladder because a human is in live conversation with the
+  // lead. But you only ever PARK someone you have already talked to — so in practice
+  // every parked lead carries one of them, and blocking on them made the release path
+  // unreachable for the whole population it was written for. The first real case
+  // (Marielis Suarez, parked 2026-08-05) sat on CALL_BOOKED from a strategy call three
+  // weeks earlier: the status recorded that a conversation HAD happened, not that one
+  // was pending.
+  //
+  // It is also the same call already made for the deal-stage gate in sendNurtureEmail
+  // below. Both fields encode "a human is engaged"; bypassing one and enforcing the
+  // other was incoherent. The park is a more recent and more specific instruction from
+  // that same human, so it wins over both.
+  //
+  // Residual risk, accepted knowingly: a lead parked today who books a call next week
+  // still gets the check-in on release day. The post-park reply gate catches them if
+  // they wrote in, but a silent Calendly booking would not be. Clearing the date
+  // cancels the touch, and the rung is one-shot regardless.
   if (!SOFT_PAUSE_NURTURE_STATUSES.has(contact.audit_nurture_status || '')) return false
   // One shot. Once the rung has been sent, the release is spent — otherwise a stale
   // past date would re-fire it on every cron run forever.

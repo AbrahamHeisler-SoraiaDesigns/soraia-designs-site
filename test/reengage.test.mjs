@@ -92,10 +92,50 @@ test('NO date releases a test row', () => {
   assert.equal(nextEmailKey(parked({ audit_test: 'true' })), null)
 })
 
-test('NO date releases a booked/open-deal lead status', () => {
+// The inverse of the case above, and the one the first live use got wrong.
+// CALL_BOOKED / CALL_COMPLETED / OPEN_DEAL stop the normal ladder, but they are
+// exactly what a parked lead looks like — you only park someone you have talked to.
+// Blocking on them made the release unreachable for the entire population.
+test('a booked/open-deal lead status does NOT block a release — that is who gets parked', () => {
   for (const lead of ['CALL_BOOKED', 'CALL_COMPLETED', 'OPEN_DEAL']) {
-    assert.equal(nextEmailKey(parked({ hs_lead_status: lead })), null, lead)
+    assert.equal(isReengageRelease(parked({ hs_lead_status: lead })), true, lead)
+    assert.equal(nextEmailKey(parked({ hs_lead_status: lead })), EMAIL_KEYS.REENGAGE_1, lead)
   }
+})
+
+test('those same statuses still block the normal ladder when no date is set', () => {
+  for (const lead of ['CALL_BOOKED', 'CALL_COMPLETED', 'OPEN_DEAL']) {
+    const active = parked({ hs_lead_status: lead, audit_nurture_status: 'active', audit_reengage_after: '' })
+    assert.equal(nextEmailKey(active), null, lead)
+  }
+})
+
+// Marielis Suarez as the system saw her on 2026-08-05: audit delivered, walked from
+// the property, paused_booked, CALL_BOOKED left over from a strategy call weeks back.
+test('the first real parked lead resolves to the rung', () => {
+  const marielis = {
+    email: 'marielis.suarez@gmail.com',
+    audit_status: 'delivered',
+    audit_pdf_url: 'https://example.com/a.pdf',
+    audit_nurture_status: 'paused_booked',
+    hs_lead_status: 'CALL_BOOKED',
+    audit_last_email_key: EMAIL_KEYS.EMAIL_2,
+    audit_reengage_after: '2026-08-17',
+  }
+  // Explicit clocks throughout — a bare nextEmailKey() here would assert "held" and
+  // then quietly start failing once the wall clock passes the date.
+  const beforeTheDay = new Date('2026-08-10T12:00:00Z').getTime()
+  assert.equal(reengageHoldActive(marielis, beforeTheDay), true, 'held before 2026-08-17')
+  assert.equal(reengageIsDue(marielis, beforeTheDay), false)
+  // On the date: one check-in, pause preserved.
+  const onTheDay = new Date('2026-08-17T12:00:00Z').getTime()
+  assert.equal(reengageIsDue(marielis, onTheDay), true)
+  assert.equal(reengageHoldActive(marielis, onTheDay), false)
+  assert.equal(
+    resolveNextNurtureStatus(EMAIL_KEYS.REENGAGE_1, marielis),
+    'paused_booked',
+    'ladder must not re-arm behind the check-in',
+  )
 })
 
 test('the rung is one-shot — a stale past date cannot re-fire it', () => {
