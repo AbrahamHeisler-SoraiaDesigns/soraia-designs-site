@@ -3,39 +3,14 @@
 // The bytes never touch Vercel — see api/_lib/intake-upload.js for why, and for
 // the Origin-header trap that makes browser-side uploads work at all.
 import { verifyIntakeToken } from './_lib/intake-token.js'
+import { applyIntakeCors, parseJsonBody, tokenFailureResponse } from './_lib/intake-http.js'
 import { assertClientFolder, resolveUploadTarget } from './_lib/intake-drive.js'
-import {
-  createResumableSession,
-  isAllowedOrigin,
-  sanitizeFilename,
-  validateUpload,
-} from './_lib/intake-upload.js'
-
-// Token problems a client can act on vs ones they can't. 'expired' is the common
-// real-world case (kickoff email opened five weeks late) and deserves an answer
-// that tells them what to do, not a bare 403.
-const TOKEN_STATUS = {
-  missing: [401, 'This link is missing its access token. Use the link from your kickoff email.'],
-  malformed: [401, 'This link looks damaged. Use the link from your kickoff email.'],
-  bad_signature: [403, 'This link is not valid.'],
-  wrong_version: [401, 'This link is out of date. Ask us for a fresh one.'],
-  incomplete: [401, 'This link is not valid.'],
-  expired: [401, 'This link has expired. Ask us for a fresh one and we will send it right over.'],
-  server_misconfigured: [503, 'Uploads are temporarily unavailable. We have been notified.'],
-}
+import { createResumableSession, sanitizeFilename, validateUpload } from './_lib/intake-upload.js'
 
 export default async function handler(req, res) {
-  const origin = req.headers.origin || ''
-  if (isAllowedOrigin(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin)
-    res.setHeader('Vary', 'Origin')
-  }
+  const { origin, allowed, handled } = applyIntakeCors(req, res)
+  if (handled) return undefined
 
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'content-type')
-    return res.status(204).end()
-  }
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ ok: false, message: 'Method not allowed' })
@@ -44,28 +19,17 @@ export default async function handler(req, res) {
   // The origin is not decoration here: it is forwarded to Google and becomes the
   // only origin allowed to PUT the bytes. An unvalidated one would let any site
   // mint a write handle into a client's folder.
-  if (!isAllowedOrigin(origin)) {
+  if (!allowed) {
     return res.status(403).json({ ok: false, message: 'Origin not allowed' })
   }
 
-  let body = req.body
-  if (typeof body === 'string') {
-    try {
-      body = JSON.parse(body)
-    } catch {
-      return res.status(400).json({ ok: false, message: 'Invalid JSON body' })
-    }
+  const body = parseJsonBody(req)
+  if (body === null) {
+    return res.status(400).json({ ok: false, message: 'Invalid JSON body' })
   }
-  body = body || {}
 
   const verdict = verifyIntakeToken(body.token)
-  if (!verdict.ok) {
-    const [status, message] = TOKEN_STATUS[verdict.reason] || [401, 'This link is not valid.']
-    if (verdict.reason === 'server_misconfigured') {
-      console.error('[intake-upload-url] token secret misconfigured:', verdict.detail)
-    }
-    return res.status(status).json({ ok: false, reason: verdict.reason, message })
-  }
+  if (!verdict.ok) return tokenFailureResponse(res, verdict)
   const { dealId, folderId, clientName } = verdict.payload
 
   const check = validateUpload({ kind: body.kind, contentType: body.contentType, size: body.size })
