@@ -5,6 +5,9 @@ import {
   EMAIL_KEYS,
   findEngagedDeal,
   NEW_LEAD_DEAL_STAGE_ID,
+  reengageHoldActive,
+  reengageIsDue,
+  SOFT_PAUSE_NURTURE_STATUSES,
   TERMINAL_LEAD_STATUSES,
   TERMINAL_NURTURE_STATUSES,
 } from './audit-config.js'
@@ -61,7 +64,57 @@ export function deliveryIsBlocked(contact) {
   return { blocked: false, reason: null }
 }
 
+// Is this send a dated re-engagement release rather than a normal ladder step?
+//
+// True only when a human parked a soft-paused lead on a date and that date has
+// arrived. Deliberately checks contactIsSuppressed()'s HARD half first — audit_test
+// and the opt-out statuses — so a date can never resurrect a test row or someone who
+// unsubscribed. What it DOES override is the soft pause, which is the entire point:
+// paused_booked is terminal to nextEmailKey(), so without this a parked lead could
+// never be reached again by any automated path, which is the same permanent-lockout
+// bug deliveryIsBlocked() was written to fix for deliveries.
+export function isReengageRelease(contact) {
+  if (contact.audit_test === 'true') return false
+  if (!reengageIsDue(contact)) return false
+  // deliveryIsBlocked() covers BOTH hard-opt-out lanes — the nurture statuses
+  // (unsubscribed / bounced / complained / unqualified) and the lead statuses
+  // (UNQUALIFIED / UNSUBSCRIBED / BOUNCED / SPAM_COMPLAINT). Those are the real
+  // opt-outs, and no date set by anyone releases them.
+  if (deliveryIsBlocked(contact).blocked) return false
+  // TERMINAL_LEAD_STATUSES (CALL_BOOKED / CALL_COMPLETED / OPEN_DEAL) is deliberately
+  // NOT checked here. This is a correction to the first cut of this feature.
+  //
+  // Those statuses stop the ladder because a human is in live conversation with the
+  // lead. But you only ever PARK someone you have already talked to — so in practice
+  // every parked lead carries one of them, and blocking on them made the release path
+  // unreachable for the whole population it was written for. The first real case
+  // (Marielis Suarez, parked 2026-08-05) sat on CALL_BOOKED from a strategy call three
+  // weeks earlier: the status recorded that a conversation HAD happened, not that one
+  // was pending.
+  //
+  // It is also the same call already made for the deal-stage gate in sendNurtureEmail
+  // below. Both fields encode "a human is engaged"; bypassing one and enforcing the
+  // other was incoherent. The park is a more recent and more specific instruction from
+  // that same human, so it wins over both.
+  //
+  // Residual risk, accepted knowingly: a lead parked today who books a call next week
+  // still gets the check-in on release day. The post-park reply gate catches them if
+  // they wrote in, but a silent Calendly booking would not be. Clearing the date
+  // cancels the touch, and the rung is one-shot regardless.
+  if (!SOFT_PAUSE_NURTURE_STATUSES.has(contact.audit_nurture_status || '')) return false
+  // One shot. Once the rung has been sent, the release is spent — otherwise a stale
+  // past date would re-fire it on every cron run forever.
+  return contact.audit_last_email_key !== EMAIL_KEYS.REENGAGE_1
+}
+
 export function nextEmailKey(contact) {
+  // A future date parks ANY lead, active or not, ahead of every other rule.
+  if (reengageHoldActive(contact)) return null
+
+  // Checked before the suppression gate: a due release is precisely a lead whose
+  // soft pause makes contactIsSuppressed() true.
+  if (isReengageRelease(contact)) return EMAIL_KEYS.REENGAGE_1
+
   if (contactIsSuppressed(contact)) return null
 
   const nurtureStatus = contact.audit_nurture_status || 'not_enrolled'
@@ -92,6 +145,10 @@ export function nextEmailKey(contact) {
 export function resolveNextNurtureStatus(emailKey, contact, isDelivery = false) {
   if (emailKey === EMAIL_KEYS.RECOVERY_2) return 'completed'
   const current = contact.audit_nurture_status || ''
+  // A re-engagement touch keeps the pause it was released from. Same reasoning as
+  // the delivery case below: the lead is paused because a human took the wheel, and
+  // one dated check-in is not a mandate to re-arm emails 3-5 behind it.
+  if (emailKey === EMAIL_KEYS.REENGAGE_1 && TERMINAL_NURTURE_STATUSES.has(current)) return current
   if (isDelivery && TERMINAL_NURTURE_STATUSES.has(current)) return current
   return 'active'
 }
@@ -181,8 +238,18 @@ export async function sendNurtureEmail(contact, emailKey, override = null, opts 
     if (freshContact.audit_nurture_status === 'paused_manual') {
       return { ok: true, skipped: true, reason: 'paused_manual' }
     }
+    // Reply lookback. Normally 60 days (gmail.js default). For a dated re-engagement
+    // that window is wrong in a way that would make the feature inert: a lead gets
+    // parked BECAUSE they wrote in to say "not now", so a 60-day lookback would find
+    // that very reply and skip the send every time. The park is the human's ruling on
+    // that conversation. So a release only looks back to the release date itself —
+    // anything the lead has sent SINCE the date is genuinely new and still stops us.
+    const isRelease = isReengageRelease(freshContact)
+    const replyLookbackDays = isRelease
+      ? Math.max(1, Math.ceil(daysSince(freshContact.audit_reengage_after)))
+      : undefined
     try {
-      if (await hasRecentInboundFrom(freshContact.email)) {
+      if (await hasRecentInboundFrom(freshContact.email, replyLookbackDays)) {
         await updateContact(freshContact.id, {
           audit_nurture_status: 'paused_reply',
           audit_brevo_last_sync_at: isoNow(),
@@ -208,7 +275,15 @@ export async function sendNurtureEmail(contact, emailKey, override = null, opts 
   //
   // NOT applied to deliveries: a lead already worked into a later stage is a lead
   // who should certainly receive the audit they asked for.
-  if (!isDelivery) {
+  //
+  // NOT applied to a dated re-engagement release either, and for the same reason the
+  // reply window narrows above: parking a lead is itself the act of a human working
+  // the deal, and it almost always comes WITH a stage move (Hot List -> Long Term FU
+  // is the canonical case). Leaving this gate on would mean every lead parked the
+  // normal way trips 'deal_engaged' on release day and the date silently does
+  // nothing. The date is the more recent and more specific human instruction, so it
+  // wins over the stage. Hard opt-outs and the post-park reply check still apply.
+  if (!isDelivery && !isReengageRelease(freshContact)) {
     try {
       const deals = await getAssociatedDealStages(freshContact.id)
       // Any-pipeline check (deliberately not scoped to the default pipeline): a deal
@@ -269,6 +344,10 @@ export async function sendNurtureEmail(contact, emailKey, override = null, opts 
     audit_brevo_last_sync_at: sentAt,
   }
   if (emailKey === EMAIL_KEYS.EMAIL_5 || emailKey === EMAIL_KEYS.RECOVERY_2) props.hs_lead_status = 'NURTURE_FATIGUED'
+  // Spend the date on use. audit_last_email_key already makes the release one-shot,
+  // but clearing the field is what keeps the CRM honest: a lead showing a
+  // re-engage date is a lead still waiting on one, never one already touched.
+  if (emailKey === EMAIL_KEYS.REENGAGE_1) props.audit_reengage_after = ''
   await updateContact(freshContact.id, props)
   return { ok: true, emailKey, messageId: sendResult.messageId }
 }

@@ -48,6 +48,7 @@ export const HUBSPOT_CONTACT_BASE_PROPS = [
   'audit_nurture_status',
   'audit_last_email_key',
   'audit_last_email_sent_at',
+  'audit_reengage_after',
   'audit_brevo_sync_status',
   'audit_brevo_last_sync_at',
   'audit_referrer',
@@ -77,6 +78,9 @@ export const EMAIL_KEYS = {
   // Drop-off recovery layer (SOR-127 §4): audit delivered, no booking, core cadence done.
   RECOVERY_1: 'recovery_1_one_more_thing',
   RECOVERY_2: 'recovery_2_closing_file',
+  // Dated re-engagement (2026-08-05). NOT part of the ladder — a one-shot rung that
+  // only ever fires for a lead a human explicitly parked via audit_reengage_after.
+  REENGAGE_1: 'reengage_1_timing_check',
 }
 
 // Deal-stage suppression (Abe's ask 2026-07-17): the sequencer reads contact
@@ -115,6 +119,48 @@ export const TERMINAL_NURTURE_STATUSES = new Set([
   'complained',
   'paused_manual',
 ])
+
+// The pauses a HUMAN chose, as opposed to the ones the lead chose. Every status in
+// here means "stop the ladder, a person has this" — none of them mean "never contact
+// this lead again". These are the only states a dated re-engagement is allowed to
+// release. The complement (unsubscribed / bounced / complained / unqualified) is a
+// hard opt-out and is deliberately absent: no date, set by anyone, releases those.
+export const SOFT_PAUSE_NURTURE_STATUSES = new Set([
+  'paused_reply',
+  'paused_booked',
+  'paused_manual',
+  'completed',
+])
+
+// Dated re-engagement (`audit_reengage_after`) — a human parks a warm-but-not-now
+// lead on a date instead of a manual CRM task nobody opens.
+//
+// Two halves, and they are NOT symmetric:
+//
+//   HOLD (date in the future) — suppresses sends for ANY lead, including an active
+//   one mid-ladder. This is the "circle back in a month" park. It costs nothing and
+//   burns no terminal status, so the lead resumes cleanly when the date lands.
+//
+//   RELEASE (date reached) — an active lead simply resumes the normal ladder: the
+//   hold expired, nothing else changed. A soft-paused lead is different — resuming
+//   the ladder would drop them into email_3 ("one question on your audit"), which is
+//   audit-followup copy aimed at someone who just received a PDF, not at someone
+//   who told us to come back in six weeks. So a soft-paused release routes to the
+//   one-shot REENGAGE_1 rung instead, and never re-arms emails 3-5.
+//
+// Both halves fail SAFE on a malformed date: toMs() returns 0, which reads as "no
+// date set", which leaves every existing gate exactly as it was.
+export function reengageHoldActive(contact, nowMs = Date.now()) {
+  const at = Date.parse(contact?.audit_reengage_after || '')
+  if (!Number.isFinite(at)) return false
+  return at > nowMs
+}
+
+export function reengageIsDue(contact, nowMs = Date.now()) {
+  const at = Date.parse(contact?.audit_reengage_after || '')
+  if (!Number.isFinite(at)) return false
+  return at <= nowMs
+}
 
 // Hard opt-outs — the ONLY states that block delivering the audit itself.
 //

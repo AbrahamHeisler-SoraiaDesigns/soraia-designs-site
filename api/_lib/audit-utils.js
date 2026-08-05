@@ -309,6 +309,19 @@ export function buildEmailContent(emailKey, contact) {
           'Abe Heisler<br/>Soraia Designs',
         ]) + footer,
       }
+    case EMAIL_KEYS.REENGAGE_1:
+      return {
+        subject: 'Circling back',
+        previewText: 'You said this timing, so here I am.',
+        html: htmlParagraphs([
+          `Hi ${name},`,
+          'You said to come back around now, so I am.',
+          '<strong>Where did things land?</strong>',
+          `If the plan is still on and you want to walk through it, <a href="${callUrl}">grab a time here</a>. If it moved, tell me roughly when and I'll set a reminder rather than keep checking in.`,
+          'And if it is off the table entirely, say so and I will close the file. No hard feelings either way.',
+          'Abe',
+        ]) + footer,
+      }
     default:
       throw new Error(`Unknown email key: ${emailKey}`)
   }
