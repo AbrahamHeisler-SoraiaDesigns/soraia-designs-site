@@ -287,7 +287,7 @@ export const QUESTIONS = [
     label: 'Theme or vibe direction',
     type: 'longtext',
     section: 'style',
-    help: 'A theme is literal (surf shack, ski lodge). A vibe is a feeling. Either is valid — we just need to know which you want.',
+    help: 'A theme is literal (surf shack, ski lodge). A vibe is a feeling. Either is valid. We just need to know which you want.',
   },
   {
     id: 'murals',
@@ -300,7 +300,7 @@ export const QUESTIONS = [
   {
     id: 'mural_property_name',
     notion: 'If Murals: Add Property Name?',
-    label: 'If yes — add the property name to it?',
+    label: 'If yes, add the property name to it?',
     type: 'select',
     section: 'style',
     options: ['Yes', 'No'],
