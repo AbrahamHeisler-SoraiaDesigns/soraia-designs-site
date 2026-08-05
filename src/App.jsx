@@ -7,6 +7,7 @@ import AuditLanding from './pages/audit/Landing'
 import AuditGetStarted from './pages/audit/GetStarted'
 import AuditRequested from './pages/audit/Requested'
 import Book from './pages/Book'
+import Intake from './pages/Intake'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -50,6 +51,9 @@ export default function App() {
         <Route path="/audit/get-started" element={<AuditGetStarted />} />
         <Route path="/audit/requested" element={<AuditRequested />} />
         <Route path="/book" element={<Book />} />
+        {/* Private per-client link (?t=<signed token>). Not linked from anywhere,
+            and noindex'd in generate-route-html.js. */}
+        <Route path="/intake" element={<Intake />} />
       </Routes>
     </BrowserRouter>
   )

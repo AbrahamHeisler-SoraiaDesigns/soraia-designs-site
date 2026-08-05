@@ -86,6 +86,19 @@ const routes = [
     ogUrl: 'https://www.soraiadesigns.com/book',
     robots: 'noindex, nofollow',
   },
+  {
+    // Private per-client onboarding form, reached only via a signed ?t= link.
+    // noindex is not optional here: an indexed URL would leak client names in
+    // search results, and the token sits in the query string.
+    path: 'intake',
+    title: 'Client Onboarding | Soraia Designs',
+    description: 'Soraia Designs client onboarding form.',
+    canonical: 'https://www.soraiadesigns.com/intake',
+    ogTitle: 'Client Onboarding | Soraia Designs',
+    ogDescription: 'Soraia Designs client onboarding form.',
+    ogUrl: 'https://www.soraiadesigns.com/intake',
+    robots: 'noindex, nofollow',
+  },
 ]
 
 for (const route of routes) {

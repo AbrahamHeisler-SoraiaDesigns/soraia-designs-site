@@ -1,5 +1,8 @@
-function requireDriveEnv() {
-  const missing = ['GOOGLE_DRIVE_CLIENT_ID', 'GOOGLE_DRIVE_CLIENT_SECRET', 'GOOGLE_DRIVE_REFRESH_TOKEN', 'GOOGLE_DRIVE_AUDIT_PROSPECTS_FOLDER_ID']
+// Credentials only. Split out from requireDriveEnv so callers that are not the
+// audit funnel (the client intake writes into "04 — Clients") do not fail on a
+// missing GOOGLE_DRIVE_AUDIT_PROSPECTS_FOLDER_ID they never use.
+function requireDriveCreds() {
+  const missing = ['GOOGLE_DRIVE_CLIENT_ID', 'GOOGLE_DRIVE_CLIENT_SECRET', 'GOOGLE_DRIVE_REFRESH_TOKEN']
     .filter((key) => !process.env[key])
   if (missing.length) {
     throw new Error(`Missing Drive env: ${missing.join(', ')}`)
@@ -8,12 +11,19 @@ function requireDriveEnv() {
     clientId: process.env.GOOGLE_DRIVE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_DRIVE_CLIENT_SECRET,
     refreshToken: process.env.GOOGLE_DRIVE_REFRESH_TOKEN,
-    prospectsFolderId: process.env.GOOGLE_DRIVE_AUDIT_PROSPECTS_FOLDER_ID,
   }
 }
 
-async function getAccessToken() {
-  const { clientId, clientSecret, refreshToken } = requireDriveEnv()
+function requireDriveEnv() {
+  const creds = requireDriveCreds()
+  if (!process.env.GOOGLE_DRIVE_AUDIT_PROSPECTS_FOLDER_ID) {
+    throw new Error('Missing Drive env: GOOGLE_DRIVE_AUDIT_PROSPECTS_FOLDER_ID')
+  }
+  return { ...creds, prospectsFolderId: process.env.GOOGLE_DRIVE_AUDIT_PROSPECTS_FOLDER_ID }
+}
+
+export async function getAccessToken() {
+  const { clientId, clientSecret, refreshToken } = requireDriveCreds()
   const body = new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
@@ -36,7 +46,7 @@ async function getAccessToken() {
   return data.access_token
 }
 
-async function driveFetch(path, { method = 'GET', body, params } = {}) {
+export async function driveFetch(path, { method = 'GET', body, params } = {}) {
   const token = await getAccessToken()
   const url = new URL(`https://www.googleapis.com/drive/v3${path}`)
   if (params) {
@@ -79,7 +89,7 @@ async function findFolderByName(name, parentId) {
   return data.files?.[0] || null
 }
 
-async function ensureFolder(name, parentId) {
+export async function ensureFolder(name, parentId) {
   const existing = await findFolderByName(name, parentId)
   if (existing) return { ...existing, created: false }
 
