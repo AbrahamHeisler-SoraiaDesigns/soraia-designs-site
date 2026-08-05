@@ -32,12 +32,19 @@ export default async function handler(req, res) {
   if (!verdict.ok) return tokenFailureResponse(res, verdict)
   const { dealId, folderId, clientName } = verdict.payload
 
-  const check = validateUpload({ kind: body.kind, contentType: body.contentType, size: body.size })
+  // Sanitize before validating: an untyped file (HEIC off a phone, a CAD export)
+  // is judged by its extension, so validation needs the cleaned name.
+  const filename = sanitizeFilename(body.filename)
+
+  const check = validateUpload({
+    kind: body.kind,
+    contentType: body.contentType,
+    size: body.size,
+    filename,
+  })
   if (!check.ok) {
     return res.status(400).json({ ok: false, reason: check.reason, message: check.message })
   }
-
-  const filename = sanitizeFilename(body.filename)
 
   try {
     await assertClientFolder(folderId)

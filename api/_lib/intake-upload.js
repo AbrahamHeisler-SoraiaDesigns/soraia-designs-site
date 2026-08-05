@@ -50,6 +50,28 @@ export const ALLOWED_TYPES = {
   floor_plans: PLAN,
 }
 
+// Browsers do not always know a file's type. HEIC off a phone, and CAD exports,
+// commonly arrive with an empty `file.type`, and the client then sends
+// application/octet-stream. Rejecting that outright made the REQUIRED inspiration
+// question unsubmittable for those clients, which is the worst place to be strict.
+// So an untyped file is judged by its extension instead of being refused.
+const UNTYPED = ['', 'application/octet-stream', 'binary/octet-stream']
+
+const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif', 'tif', 'tiff']
+const DOC_EXT = ['pdf']
+const PLAN_EXT = [...IMAGE_EXT, ...DOC_EXT, 'dwg', 'dxf']
+
+export const ALLOWED_EXTENSIONS = {
+  inspiration: [...IMAGE_EXT, ...DOC_EXT],
+  property_photos: [...IMAGE_EXT, ...DOC_EXT],
+  floor_plans: PLAN_EXT,
+}
+
+export function extensionOf(filename) {
+  const m = String(filename || '').toLowerCase().match(/\.([a-z0-9]+)$/)
+  return m ? m[1] : ''
+}
+
 /** Strip anything that could escape the intended folder or confuse Drive. */
 export function sanitizeFilename(name) {
   const base = String(name || '')
@@ -66,14 +88,28 @@ export function sanitizeFilename(name) {
  * Validate one requested upload. Returns {ok:true} or {ok:false, reason, message}.
  * Pure — no network — so the rules are unit-testable.
  */
-export function validateUpload({ kind, contentType, size }) {
+export function validateUpload({ kind, contentType, size, filename }) {
   const allowed = ALLOWED_TYPES[kind]
   if (!allowed) return { ok: false, reason: 'bad_kind', message: `Unknown upload kind "${kind}"` }
 
   const type = String(contentType || '').toLowerCase().split(';')[0].trim()
-  if (!type) return { ok: false, reason: 'missing_type', message: 'contentType is required' }
   if (!allowed.includes(type)) {
-    return { ok: false, reason: 'bad_type', message: `${type} is not accepted for ${kind}` }
+    // Untyped file: fall back to the extension so a HEIC or a .dwg is not turned
+    // away for something the browser failed to tell us.
+    if (UNTYPED.includes(type)) {
+      const ext = extensionOf(filename)
+      if (!ext || !ALLOWED_EXTENSIONS[kind].includes(ext)) {
+        return {
+          ok: false,
+          reason: 'bad_type',
+          message: ext
+            ? `.${ext} files are not accepted for ${kind}`
+            : 'We could not tell what kind of file that is. Try a JPG, PNG, HEIC, or PDF.',
+        }
+      }
+    } else {
+      return { ok: false, reason: 'bad_type', message: `${type} is not accepted for ${kind}` }
+    }
   }
 
   const bytes = Number(size)

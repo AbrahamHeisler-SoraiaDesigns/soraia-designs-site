@@ -70,7 +70,12 @@ export function peekToken(token) {
   try {
     const payloadB64 = token.split('.')[0]
     const pad = payloadB64.length % 4 === 0 ? '' : '='.repeat(4 - (payloadB64.length % 4))
-    const json = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/') + pad)
+    const binary = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/') + pad)
+    // atob yields one byte per char (Latin-1). The payload is UTF-8, so it has to
+    // be decoded as text or any accented name greets the client as mojibake —
+    // "José" renders "JosÃ©", on the one screen meant to feel personal.
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
+    const json = new TextDecoder('utf-8').decode(bytes)
     const p = JSON.parse(json)
     return {
       dealId: p.deal || null,

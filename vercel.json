@@ -1,8 +1,33 @@
 {
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ],
   "crons": [
-    { "path": "/api/audit-nurture-run", "schedule": "0 14 * * *" }
+    {
+      "path": "/api/audit-nurture-run",
+      "schedule": "0 14 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/intake",
+      "headers": [
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
   ]
 }

@@ -345,6 +345,22 @@ export function isQuestionActive(question, answers) {
  * is a single check everywhere. Note that a real 0 (zero bedrooms) survives — the
  * blank test is on the trimmed string, not on falsiness.
  */
+/**
+ * Keep only http(s) URLs. The file `url` is client-supplied and lands in an href
+ * in the design brief, so a `javascript:` or `data:` value would be written into
+ * a document Soraia opens. Anything else is dropped and the id-derived Drive link
+ * is used instead.
+ */
+export function safeHttpUrl(value) {
+  if (!value) return null
+  try {
+    const u = new URL(String(value))
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : null
+  } catch {
+    return null
+  }
+}
+
 export function normalizeAnswer(question, raw) {
   if (!question) return null
   if (raw === undefined || raw === null) return null
@@ -357,7 +373,7 @@ export function normalizeAnswer(question, raw) {
       .map((f) => ({
         name: String(f.name).trim(),
         id: f.id ? String(f.id) : null,
-        url: f.url ? String(f.url) : f.id ? `https://drive.google.com/file/d/${f.id}/view` : null,
+        url: safeHttpUrl(f.url) || (f.id ? `https://drive.google.com/file/d/${String(f.id)}/view` : null),
       }))
     return files.length ? files : null
   }
@@ -394,13 +410,33 @@ export function normalizeAnswers(raw = {}) {
 }
 
 /**
+ * Has a required file question actually been satisfied?
+ *
+ * A filename alone is not evidence: the answers payload is client-supplied, so
+ * `[{name:'kitchen.jpg'}]` with nothing behind it would otherwise pass and the
+ * brief would claim inspiration photos that are not in Drive. A real upload comes
+ * back from /api/intake-upload-url with a Drive file id, so that is what counts.
+ *
+ * (June's tracker gates the mood board on Drive itself, not on this, so a forged
+ * list never actually unblocks the work — but it would put a lie in the brief.)
+ */
+function fileAnswerSatisfied(value) {
+  return Array.isArray(value) && value.some((f) => f && f.id)
+}
+
+/**
  * Check the four required answers are present.
  * Returns {ok:true, answers} or {ok:false, missing:[{id,label}]}.
  */
 export function validateAnswers(raw = {}) {
   const answers = normalizeAnswers(raw)
   const missing = QUESTIONS
-    .filter((q) => q.required && isQuestionActive(q, answers) && answers[q.id] == null)
+    .filter((q) => {
+      if (!q.required || !isQuestionActive(q, answers)) return false
+      const value = answers[q.id]
+      if (value == null) return true
+      return q.type === 'files' ? !fileAnswerSatisfied(value) : false
+    })
     .map((q) => ({ id: q.id, label: q.label }))
   return missing.length ? { ok: false, missing } : { ok: true, answers }
 }
