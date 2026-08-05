@@ -147,7 +147,7 @@ t('an answer to a hidden conditional question is blanked in the Sheet', () => {
   const answers = normalizeAnswers({ ...BASE, inspiration_files: [{ name: 'k.jpg', id: '1' }],
     murals: 'No', mural_property_name: 'Yes' })
   const row = buildRowMap({ submittedAt: 't', dealId: 'd', clientName: 'c', briefUrl: '', folderUrl: '', answers })
-  assert.strictEqual(row['If yes — add the property name to it?'], '',
+  assert.strictEqual(row['If yes, add the property name to it?'], '',
     'stale answer to a hidden question leaked into the Sheet')
 })
 
@@ -155,7 +155,7 @@ t('the same answer IS written when its condition holds', () => {
   const answers = normalizeAnswers({ ...BASE, inspiration_files: [{ name: 'k.jpg', id: '1' }],
     murals: 'Yes', mural_property_name: 'Yes' })
   const row = buildRowMap({ submittedAt: 't', dealId: 'd', clientName: 'c', briefUrl: '', folderUrl: '', answers })
-  assert.strictEqual(row['If yes — add the property name to it?'], 'Yes')
+  assert.strictEqual(row['If yes, add the property name to it?'], 'Yes')
 })
 
 // --- 5. client-supplied URLs into the brief -------------------------------

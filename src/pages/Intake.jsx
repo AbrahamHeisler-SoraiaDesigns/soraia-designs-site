@@ -256,7 +256,7 @@ export default function Intake() {
         </h1>
         <p className="font-sans text-mid-charcoal leading-relaxed mb-8" style={{ fontSize: 17 }}>
           Your photos are filed and Soraia has what she needs to start your mood board. If anything
-          changes, reopen your link and submit again — it updates rather than duplicates.
+          changes, reopen your link and submit again. It updates rather than duplicates.
         </p>
         {result.briefUrl && (
           <a
@@ -282,7 +282,7 @@ export default function Intake() {
         {firstName ? <>Welcome, {firstName}.</> : <>Welcome.</>}
       </h1>
       <p className="font-sans text-mid-charcoal mb-10 leading-relaxed" style={{ fontSize: 17 }}>
-        Four questions are required — your name, the address, your furnishings budget, and your
+        Four questions are required: your name, the address, your furnishings budget, and your
         inspiration photos. Everything else helps, but leave blank anything you are unsure about.
         Your answers save as you go, so you can finish this later on the same device.
       </p>
