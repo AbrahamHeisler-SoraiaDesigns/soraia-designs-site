@@ -1,5 +1,5 @@
 import { HUBSPOT_OWNER_ID, HUBSPOT_PORTAL_ID, HUBSPOT_SEARCH_PROPS } from './audit-config.js'
-import { formatPropertyLine, isoNow, splitName } from './audit-utils.js'
+import { addressKey, addressKeyFromDeal, formatPropertyLine, isoNow, splitName } from './audit-utils.js'
 
 function requireKey() {
   const key = process.env.HUBSPOT_SERVICE_KEY
@@ -310,6 +310,20 @@ function buildDealDescription(payload, driveFolderUrl, auditReportUrl) {
   return parts.join('\n')
 }
 
+// Keep whatever a human added to an existing deal's description while folding
+// in any lines the new submission brings. Line-level union, order preserved.
+function mergeDescription(existing, incoming) {
+  const seen = new Set()
+  const out = []
+  for (const line of [...String(existing || '').split('\n'), ...String(incoming || '').split('\n')]) {
+    const trimmed = line.trim()
+    if (!trimmed || seen.has(trimmed)) continue
+    seen.add(trimmed)
+    out.push(trimmed)
+  }
+  return out.join('\n')
+}
+
 // Deal-stage suppression lookup (Abe's ask 2026-07-17). Returns the associated
 // deals' stages so the sequencer can stop mailing a lead a human has engaged
 // (moved out of "New Lead"). Uses the v4 associations endpoint — the v3 shape
@@ -338,6 +352,38 @@ export async function getAssociatedDealStages(contactId) {
   return (batch?.results || []).map((row) => ({ id: row.id, ...row.properties }))
 }
 
+// One property, one deal (Abe, 2026-08-06). A repeat submission for an address
+// we already have a deal for must UPDATE that deal rather than open a second
+// one. Matching on deal NAME alone was not enough: Robert Correale's audit deal
+// and his design deal describe the same house under different names, so the
+// second submission created a duplicate that later had to be merged by hand.
+//
+// Looks at the deals already associated with this contact, which is both the
+// cheapest query and the least likely to collide with an unrelated lead who
+// happens to live on a similarly-named street.
+async function findDealForAddress(contactId, payload) {
+  const wanted = addressKey(formatPropertyLine(payload))
+  if (!contactId || !wanted) return null
+  let deals = []
+  try {
+    deals = await getAssociatedDealStages(contactId)
+  } catch (err) {
+    // Never block an intake on a dedupe lookup. Worst case we create a
+    // duplicate, which is recoverable; losing the submission is not.
+    console.warn(`[hubspot] dedupe lookup failed for contact ${contactId}: ${err.message}`)
+    return null
+  }
+  if (!deals.length) return null
+
+  const ids = deals.map((d) => ({ id: String(d.id) }))
+  const full = await hubspotFetch('/crm/v3/objects/deals/batch/read', {
+    method: 'POST',
+    body: { properties: ['dealname', 'description', 'dealstage', 'pipeline'], inputs: ids },
+  })
+  const rows = (full?.results || []).map((r) => ({ id: r.id, ...r.properties }))
+  return rows.find((r) => addressKeyFromDeal(r) === wanted) || null
+}
+
 export async function upsertAuditDeal({ contactId, payload, driveFolderUrl, auditReportUrl }) {
   const { pipeline, stage } = requireDealConfig()
   const dealname = auditDealName(payload)
@@ -350,13 +396,30 @@ export async function upsertAuditDeal({ contactId, payload, driveFolderUrl, audi
     description,
   }
 
-  const existing = await findDealByName(dealname)
+  // Address first, then the legacy name match as a fallback.
+  const existing = (await findDealForAddress(contactId, payload)) || (await findDealByName(dealname))
   if (existing?.id) {
+    // Updating an existing deal must never walk it backwards. If a human has
+    // moved it out of the intake stage, or renamed it, that is a decision we
+    // respect: refresh the description only. Without this, a repeat submission
+    // would reset a Closed Won deal to New Lead and rename it back to
+    // "<name> - Audit".
+    const untouched = existing.dealstage === stage
+    const renamed = existing.dealname && existing.dealname !== dealname
+    const patch = untouched && !renamed
+      ? properties
+      : { description: mergeDescription(existing.description, description) }
+
     await hubspotFetch(`/crm/v3/objects/deals/${existing.id}`, {
       method: 'PATCH',
-      body: { properties },
+      body: { properties: patch },
     })
-    return { id: existing.id, url: buildDealUrl(existing.id), created: false }
+    return {
+      id: existing.id,
+      url: buildDealUrl(existing.id),
+      created: false,
+      preservedStage: !untouched || renamed,
+    }
   }
 
   const createBody = {

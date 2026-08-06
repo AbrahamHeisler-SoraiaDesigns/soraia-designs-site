@@ -47,6 +47,50 @@ export function formatPropertyLine(contact) {
   return [street, [city, state].filter(Boolean).join(', ')].filter(Boolean).join(', ')
 }
 
+// Street-type synonyms, so "127 Hawthorne Branch Rd" and "127 Hawthorne Branch
+// Road" are one property. Used for deal de-duplication: a second submission for
+// an address we already have a deal for must UPDATE that deal, never open a new
+// one (Abe, 2026-08-06, after Robert Correale ended up with two).
+const STREET_SYNONYMS = {
+  street: 'st', avenue: 'ave', drive: 'dr', road: 'rd', lane: 'ln',
+  court: 'ct', boulevard: 'blvd', place: 'pl', terrace: 'ter', circle: 'cir',
+  highway: 'hwy', parkway: 'pkwy', trail: 'trl', square: 'sq',
+  north: 'n', south: 's', east: 'e', west: 'w',
+  northeast: 'ne', northwest: 'nw', southeast: 'se', southwest: 'sw',
+  apartment: 'apt', suite: 'ste', unit: 'unit',
+}
+
+// A comparable key for a street address. Case, punctuation, "Rd" vs "Road" and
+// trailing city/state noise all collapse. Returns '' when there is nothing
+// address-like, and callers MUST treat '' as "no match possible" rather than as
+// a key that matches other empties.
+export function addressKey(value) {
+  const raw = String(value || '').toLowerCase()
+  if (!raw.trim()) return ''
+  const tokens = raw
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .map((t) => STREET_SYNONYMS[t] || t)
+  if (!tokens.length) return ''
+  // Require a leading house number; "Broken Bow, OK" on its own is a market,
+  // not a property, and must never collide with another lead in that market.
+  if (!/^\d/.test(tokens[0])) return ''
+  return tokens.join('-')
+}
+
+// Deals carry the address in their description ("Property: 127 Hawthorne ...")
+// and sometimes in the name. Pull whichever we can find.
+export function addressKeyFromDeal(deal) {
+  const desc = String(deal?.description || '')
+  const line = desc.match(/^\s*Property:\s*(.+)$/mi)
+  if (line) {
+    const key = addressKey(line[1])
+    if (key) return key
+  }
+  const inName = String(deal?.dealname || '').match(/\(([^)]*\d[^)]*)\)/)
+  return inName ? addressKey(inName[1]) : ''
+}
+
 export function firstName(contact) {
   return contact.firstname || splitName(contact.full_name || '').firstname || 'there'
 }
