@@ -165,23 +165,90 @@ export async function threadHasInboundFrom(threadId, leadEmail) {
   })
 }
 
-// Reply-aware pre-send gate (build-spec §4), search-based so it needs no stored
-// thread id and catches replies even if threading broke. True if abe@'s mailbox
-// has ANY inbound message from the lead in the window. The sequencer STOPs on true
-// (→ paused_reply), making the Esther "goodbye-then-cold-pitch" collision
-// structurally impossible.
-export async function hasRecentInboundFrom(leadEmail, days = 60) {
-  if (!leadEmail) return false
-  const accessToken = await getAccessToken()
+// Our own domain. Addresses here are US (Abe, Soraia, Lis, Barbara), never the
+// lead — without this, a thread where Abe loops in the team would read as "the
+// lead replied" and park a live lead forever.
+const OUR_DOMAIN = String(SENDER_EMAIL).toLowerCase().split('@')[1] || 'soraiadesigns.com'
+
+function isOurDomain(address) {
+  const n = normalizeEmail(address)
+  const at = n.lastIndexOf('@')
+  return at > 0 && n.slice(at + 1) === OUR_DOMAIN
+}
+
+// How many threads to walk in pass 2. Bounded because this runs per-lead on a
+// cron: a lead with a long history should cost a predictable number of calls.
+const THREAD_SCAN_LIMIT = 10
+
+async function gmailGet(accessToken, path) {
+  const res = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!res.ok) throw new Error(`gmail: ${path.split('?')[0]} ${res.status}: ${await res.text()}`)
+  return res.json()
+}
+
+// Pass 1 — the lead replied from the address we have on file. Cheap, one call,
+// and it is the common case.
+async function inboundByAddress(accessToken, leadEmail, days) {
   const q = encodeURIComponent(`from:${String(leadEmail).trim()} newer_than:${days}d`)
-  const res = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${q}&maxResults=1`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  )
-  if (!res.ok) throw new Error(`gmail: message list ${res.status}: ${await res.text()}`)
-  const json = await res.json()
+  const json = await gmailGet(accessToken, `messages?q=${q}&maxResults=1`)
   return (json.resultSizeEstimate || 0) > 0 || (Array.isArray(json.messages) && json.messages.length > 0)
 }
 
+// Pass 2 — the lead replied from a DIFFERENT address than the one they signed up
+// with. Pass 1 cannot see this, and it is not hypothetical: Eve Alpern's intake
+// address was hello@saltystaysmaine.com and she replied twice from
+// evealpern@gmail.com (2026-08-06). The gate missed both, left her `active` at
+// email_4_math, and queued the goodbye email at a lead who had just written in
+// asking to book.
+//
+// So instead of trusting the address, trust the THREAD: find threads we addressed
+// to the lead, and treat any message on them from outside our own domain as a
+// reply. That catches an alternate address, a spouse, an assistant, or anyone the
+// lead hands the conversation to.
+async function inboundOnOurThreads(accessToken, leadEmail, days, cutoffMs) {
+  const q = encodeURIComponent(`to:${String(leadEmail).trim()} newer_than:${days}d`)
+  const list = await gmailGet(accessToken, `threads?q=${q}&maxResults=${THREAD_SCAN_LIMIT}`)
+  for (const thread of list.threads || []) {
+    const full = await gmailGet(
+      accessToken,
+      `threads/${thread.id}?format=metadata&metadataHeaders=From`
+    )
+    for (const m of full.messages || []) {
+      // A thread can be older than the window even when the search matched it on a
+      // recent message. Without this the re-engage release path breaks: a lead is
+      // parked BECAUSE they wrote "not now", so counting that original reply would
+      // suppress the release send every single time.
+      if (cutoffMs && Number(m.internalDate || 0) < cutoffMs) continue
+      const from = (m.payload?.headers || []).find((h) => h.name === 'From')?.value || ''
+      const address = addressFromHeader(from)
+      if (!address) continue
+      if (!isOurDomain(address)) return true
+    }
+  }
+  return false
+}
+
+// Reply-aware pre-send gate (build-spec §4), search-based so it needs no stored
+// thread id and catches replies even if threading broke. True if abe@'s mailbox
+// shows the lead engaged in the window, by either of two routes (see above). The
+// sequencer STOPs on true (→ paused_reply), making the Esther
+// "goodbye-then-cold-pitch" collision structurally impossible.
+export async function hasRecentInboundFrom(leadEmail, days = 60) {
+  if (!leadEmail) return false
+  const windowDays = Math.max(1, Number(days) || 60)
+  const cutoffMs = Date.now() - windowDays * 24 * 60 * 60 * 1000
+  const accessToken = await getAccessToken()
+  if (await inboundByAddress(accessToken, leadEmail, windowDays)) return true
+  return inboundOnOurThreads(accessToken, leadEmail, windowDays, cutoffMs)
+}
+
 // Exported for unit tests.
-export const __test = { buildRawMessage, assertHeaderSafe, normalizeEmail }
+export const __test = {
+  buildRawMessage,
+  assertHeaderSafe,
+  normalizeEmail,
+  isOurDomain,
+  inboundOnOurThreads,
+}
