@@ -19,6 +19,12 @@ export default {
         serif: ['Outfit', 'system-ui', 'sans-serif'],
         sans:  ['DM Sans', 'system-ui', 'sans-serif'],
         hand:  ['Caveat', 'cursive'],
+        // The brand's actual display face (see ~/SDOS/skills/soraia-brand).
+        // Added alongside `serif` rather than replacing it: `serif` is still
+        // mapped to Outfit and used across every other section, so repointing
+        // it here would restyle the whole site in one step. Sections move onto
+        // `display` one at a time; when the last one does, `serif` retires.
+        display: ['Cormorant Garamond', 'Georgia', 'Times New Roman', 'serif'],
       },
       letterSpacing: {
         widest: '0.2em',

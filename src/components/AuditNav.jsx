@@ -12,10 +12,13 @@ export default function AuditNav() {
       <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
         <Link to="/" className="flex-shrink-0" aria-label="Soraia Designs — back to homepage">
           <img
-            src="/assets/soraia-designs-logo-transparent.png"
+            src="/assets/soraia-designs-logo-charcoal.png"
             alt="Soraia Designs"
             className="w-auto"
-            style={{ mixBlendMode: 'multiply', height: 80 }}
+            // The old asset was a 2000x2000 square that was mostly transparent
+            // padding, so height:80 drew the wordmark at a fraction of the box.
+            // This is the tight 1124x366 crop, matching the main nav.
+            style={{ height: 44 }}
           />
         </Link>
         <Link

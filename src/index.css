@@ -75,6 +75,20 @@
   }
 }
 
+/* Hero: a slow push-in on the still, so the frame breathes without asking the
+   visitor to wait on a video. Transform only, so it never touches layout. */
+@keyframes hero-push-in {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+.hero-still {
+  animation: hero-push-in 26s cubic-bezier(0.16, 0.6, 0.32, 1) forwards;
+  transform-origin: 58% 45%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-still { animation: none; transform: none; }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
