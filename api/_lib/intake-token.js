@@ -119,7 +119,30 @@ export function verifyIntakeToken(token, { now = Date.now() } = {}) {
   }
 }
 
-/** Full intake URL for a client. */
-export function buildIntakeUrl(token, baseUrl = process.env.SITE_BASE_URL || 'https://soraiadesigns.com') {
-  return `${String(baseUrl).replace(/\/+$/, '')}/intake?t=${encodeURIComponent(token)}`
+// Path per questionnaire. The route is what selects the form (the token carries
+// no form field — see intake-forms.js), so minting the wrong path hands a client
+// the wrong set of questions with a perfectly valid token.
+//
+// Duplicated as INTAKE_PATHS in June's ~/.hermes/scripts/soraia_intake_link.py,
+// which cannot import this. test_intake_link_parity.py asserts the two agree.
+// Adding a form means editing both.
+export const INTAKE_PATHS = {
+  str: '/intake',
+  newbuild: '/intake/newbuild',
+}
+
+/**
+ * Full intake URL for a client.
+ *
+ * Unknown form falls back to the STR path rather than throwing, matching how
+ * getForm() resolves server-side — a typo should produce the old behaviour, not
+ * a crash inside June's nightly report.
+ */
+export function buildIntakeUrl(
+  token,
+  baseUrl = process.env.SITE_BASE_URL || 'https://soraiadesigns.com',
+  form = 'str',
+) {
+  const path = INTAKE_PATHS[form] || INTAKE_PATHS.str
+  return `${String(baseUrl).replace(/\/+$/, '')}${path}?t=${encodeURIComponent(token)}`
 }
