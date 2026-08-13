@@ -4,18 +4,17 @@ import { Check } from 'lucide-react'
 import Footer from '../components/Footer'
 import FileUploader from '../components/intake/FileUploader'
 import { clearDraft, loadDraft, peekToken, saveDraft } from '../lib/intake-draft'
-import {
-  QUESTIONS,
-  SECTIONS,
-  isQuestionActive,
-  questionsForSection,
-  validateAnswers,
-} from '../../api/_lib/intake-questions'
+import { getForm } from '../../api/_lib/intake-forms'
+import { CHANGED_PREFIX, CONFIRMED_VALUE } from '../../api/_lib/intake-schema'
 
 // The question schema is imported from api/_lib rather than duplicated here. It is
 // pure data with no Node dependencies, so Vite bundles it fine — and it means the
 // client cannot disagree with the server about what is required. validateAnswers
 // below is literally the same function /api/intake-submit runs.
+//
+// Which schema is decided by the route, not the token — /intake is the STR
+// onboarding and /intake/newbuild is the new-construction intake. See
+// api/_lib/intake-forms.js for why the token stays out of it.
 
 const inputBase =
   'w-full font-sans text-charcoal bg-white border border-stone/50 px-4 py-3 focus:outline-none focus:border-brass transition-colors'
@@ -34,8 +33,72 @@ function Field({ question, error, children }) {
   )
 }
 
+/**
+ * A claim we already believe, for the client to wave through or correct.
+ *
+ * These exist so a client is not made to retype what they already told us on a
+ * call — but the real payoff is the correction path. A wrong belief that goes
+ * unchallenged becomes a design decision, so disagreeing has to be as cheap as
+ * one tap, and the note box opens already focused.
+ *
+ * Stores a plain string: CONFIRMED_VALUE, or CHANGED_PREFIX + what they typed.
+ */
+function ConfirmControl({ question, value, onChange }) {
+  const changed = typeof value === 'string' && value.startsWith(CHANGED_PREFIX)
+  const confirmed = value === CONFIRMED_VALUE
+  const note = changed ? value.slice(CHANGED_PREFIX.length) : ''
+
+  const pill = (on) =>
+    `font-sans text-sm px-5 py-2.5 border transition-colors ${
+      on ? 'border-brass bg-brass/10 text-charcoal' : 'border-stone/50 bg-white text-mid-charcoal/70 hover:border-brass/60'
+    }`
+
+  return (
+    <div>
+      {question.call && (
+        <p className="font-sans text-mid-charcoal border-l-2 border-stone/50 pl-4 mb-3 italic">
+          {question.call}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" aria-pressed={confirmed} className={pill(confirmed)} onClick={() => onChange(CONFIRMED_VALUE)}>
+          That’s right
+        </button>
+        <button
+          type="button"
+          aria-pressed={changed}
+          className={pill(changed)}
+          // Seed with the prefix and nothing else so the textarea renders
+          // immediately; an empty correction still records the disagreement.
+          onClick={() => onChange(CHANGED_PREFIX)}
+        >
+          Not quite
+        </button>
+      </div>
+      {changed && (
+        <textarea
+          className={`${inputBase} mt-3`}
+          rows={3}
+          autoFocus
+          placeholder="What should it be instead?"
+          value={note}
+          onChange={(e) => onChange(CHANGED_PREFIX + e.target.value)}
+        />
+      )}
+    </div>
+  )
+}
+
 function Question({ question, value, onChange, token, error, onBusyChange }) {
   const common = { id: question.id, className: inputBase }
+
+  if (question.type === 'confirm') {
+    return (
+      <Field question={question} error={error}>
+        <ConfirmControl question={question} value={value} onChange={onChange} />
+      </Field>
+    )
+  }
 
   if (question.type === 'files') {
     return (
@@ -113,10 +176,12 @@ function Question({ question, value, onChange, token, error, onBusyChange }) {
   )
 }
 
-export default function Intake() {
+export default function Intake({ form = 'str' }) {
   const [params] = useSearchParams()
   const token = params.get('t') || ''
   const peeked = useMemo(() => peekToken(token), [token])
+  const schema = useMemo(() => getForm(form).schema, [form])
+  const { QUESTIONS, SECTIONS, isQuestionActive, questionsForSection, validateAnswers } = schema
 
   const [answers, setAnswers] = useState({})
   const [sectionIndex, setSectionIndex] = useState(0)
@@ -136,19 +201,19 @@ export default function Intake() {
   useEffect(() => {
     if (hydrated.current || !peeked?.dealId) return
     hydrated.current = true
-    const draft = loadDraft(peeked.dealId)
+    const draft = loadDraft(peeked.dealId, schema.id)
     if (draft && Object.keys(draft.answers).length) {
       setAnswers(draft.answers)
       setRestored(true)
     }
-  }, [peeked?.dealId])
+  }, [peeked?.dealId, schema.id])
 
   // Autosave. Debounced so typing a paragraph is one write, not eighty.
   useEffect(() => {
     if (!hydrated.current || !peeked?.dealId) return undefined
-    const id = setTimeout(() => saveDraft(peeked.dealId, answers), 600)
+    const id = setTimeout(() => saveDraft(peeked.dealId, answers, schema.id), 600)
     return () => clearTimeout(id)
-  }, [answers, peeked?.dealId])
+  }, [answers, peeked?.dealId, schema.id])
 
   const setAnswer = useCallback((id, value) => {
     setAnswers((prev) => ({ ...prev, [id]: value }))
@@ -190,7 +255,7 @@ export default function Intake() {
       const res = await fetch('/api/intake-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, answers }),
+        body: JSON.stringify({ token, answers, form: schema.id }),
       })
       const body = await res.json().catch(() => ({}))
       if (!res.ok || !body.ok) {
@@ -200,7 +265,7 @@ export default function Intake() {
         }
         throw new Error(body.message || 'We could not save your answers. Please try again.')
       }
-      clearDraft(peeked?.dealId)
+      clearDraft(peeked?.dealId, schema.id)
       setResult(body)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
@@ -255,8 +320,7 @@ export default function Intake() {
           {result.resubmitted ? 'Your answers are updated.' : 'That is everything we need.'}
         </h1>
         <p className="font-sans text-mid-charcoal leading-relaxed mb-8" style={{ fontSize: 17 }}>
-          Your photos are filed and Soraia has what she needs to start your mood board. If anything
-          changes, reopen your link and submit again. It updates rather than duplicates.
+          {schema.doneMessage}
         </p>
         {result.briefUrl && (
           <a
@@ -282,9 +346,7 @@ export default function Intake() {
         {firstName ? <>Welcome, {firstName}.</> : <>Welcome.</>}
       </h1>
       <p className="font-sans text-mid-charcoal mb-10 leading-relaxed" style={{ fontSize: 17 }}>
-        Four questions are required: your name, the address, your furnishings budget, and your
-        inspiration photos. Everything else helps, but leave blank anything you are unsure about.
-        Your answers save as you go, so you can finish this later on the same device.
+        {schema.intro}
       </p>
 
       {restored && (

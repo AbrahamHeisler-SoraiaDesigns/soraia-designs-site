@@ -10,6 +10,8 @@
 // apostrophe in "Absolute No’s" and the en dash in "Competitor Listings (2–3)" are
 // what is actually stored over there.
 
+import { makeSchema } from './intake-schema.js'
+
 export const SECTIONS = [
   { id: 'property', title: 'The Property', blurb: 'The basics we build everything else on.' },
   { id: 'goals', title: 'Goals & Guests', blurb: 'Who you are designing for, and what winning looks like.' },
@@ -315,136 +317,35 @@ export const QUESTIONS = [
   },
 ]
 
-export const QUESTIONS_BY_ID = new Map(QUESTIONS.map((q) => [q.id, q]))
+const schema = makeSchema({
+  id: 'str',
+  title: 'STR onboarding',
+  intro:
+    'Four questions are required: your name, the address, your furnishings budget, and your ' +
+    'inspiration photos. Everything else helps, but leave blank anything you are unsure about. ' +
+    'Your answers save as you go, so you can finish this later on the same device.',
+  doneMessage:
+    'Your photos are filed and Soraia has what she needs to start your mood board. If anything ' +
+    'changes, reopen your link and submit again. It updates rather than duplicates.',
+  sections: SECTIONS,
+  questions: QUESTIONS,
+})
 
-export const REQUIRED_IDS = QUESTIONS.filter((q) => q.required).map((q) => q.id)
+export default schema
 
-/** Questions that carry file uploads, in form order. */
-export const UPLOAD_QUESTIONS = QUESTIONS.filter((q) => q.type === 'files')
-
-export function questionsForSection(sectionId) {
-  return QUESTIONS.filter((q) => q.section === sectionId)
-}
-
-/**
- * True when a conditional question is currently in play. A question hidden by its
- * own condition must never be treated as unanswered — nothing depends on one today
- * that is also required, but validation and the brief both consult this so adding
- * such a pair later does not quietly break either.
- */
-export function isQuestionActive(question, answers) {
-  const dep = question.dependsOn
-  if (!dep) return true
-  return normalizeAnswer(QUESTIONS_BY_ID.get(dep.id), answers?.[dep.id]) === dep.equals
-}
-
-/**
- * Coerce one raw answer into its storage shape, or null when blank.
- *
- * Returns null rather than '' or 0 for absent values so "did they answer this?"
- * is a single check everywhere. Note that a real 0 (zero bedrooms) survives — the
- * blank test is on the trimmed string, not on falsiness.
- */
-/**
- * Keep only http(s) URLs. The file `url` is client-supplied and lands in an href
- * in the design brief, so a `javascript:` or `data:` value would be written into
- * a document Soraia opens. Anything else is dropped and the id-derived Drive link
- * is used instead.
- */
-export function safeHttpUrl(value) {
-  if (!value) return null
-  try {
-    const u = new URL(String(value))
-    return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : null
-  } catch {
-    return null
-  }
-}
-
-export function normalizeAnswer(question, raw) {
-  if (!question) return null
-  if (raw === undefined || raw === null) return null
-
-  if (question.type === 'files') {
-    if (!Array.isArray(raw)) return null
-    const files = raw
-      .map((f) => (typeof f === 'string' ? { name: f } : f))
-      .filter((f) => f && typeof f.name === 'string' && f.name.trim())
-      .map((f) => ({
-        name: String(f.name).trim(),
-        id: f.id ? String(f.id) : null,
-        url: safeHttpUrl(f.url) || (f.id ? `https://drive.google.com/file/d/${String(f.id)}/view` : null),
-      }))
-    return files.length ? files : null
-  }
-
-  if (question.type === 'multiselect') {
-    const list = (Array.isArray(raw) ? raw : [raw])
-      .map((v) => String(v).trim())
-      .filter(Boolean)
-      .filter((v) => !question.options || question.options.includes(v))
-    return list.length ? list : null
-  }
-
-  const text = String(raw).trim()
-  if (!text) return null
-
-  if (question.type === 'number') {
-    const n = Number(text.replace(/,/g, ''))
-    return Number.isFinite(n) ? n : null
-  }
-  if (question.type === 'select') {
-    return question.options?.includes(text) ? text : null
-  }
-  return text
-}
-
-/** Normalize a whole submission. Unknown keys are dropped. */
-export function normalizeAnswers(raw = {}) {
-  const out = {}
-  for (const q of QUESTIONS) {
-    const value = normalizeAnswer(q, raw[q.id])
-    if (value !== null) out[q.id] = value
-  }
-  return out
-}
-
-/**
- * Has a required file question actually been satisfied?
- *
- * A filename alone is not evidence: the answers payload is client-supplied, so
- * `[{name:'kitchen.jpg'}]` with nothing behind it would otherwise pass and the
- * brief would claim inspiration photos that are not in Drive. A real upload comes
- * back from /api/intake-upload-url with a Drive file id, so that is what counts.
- *
- * (June's tracker gates the mood board on Drive itself, not on this, so a forged
- * list never actually unblocks the work — but it would put a lie in the brief.)
- */
-function fileAnswerSatisfied(value) {
-  return Array.isArray(value) && value.some((f) => f && f.id)
-}
-
-/**
- * Check the four required answers are present.
- * Returns {ok:true, answers} or {ok:false, missing:[{id,label}]}.
- */
-export function validateAnswers(raw = {}) {
-  const answers = normalizeAnswers(raw)
-  const missing = QUESTIONS
-    .filter((q) => {
-      if (!q.required || !isQuestionActive(q, answers)) return false
-      const value = answers[q.id]
-      if (value == null) return true
-      return q.type === 'files' ? !fileAnswerSatisfied(value) : false
-    })
-    .map((q) => ({ id: q.id, label: q.label }))
-  return missing.length ? { ok: false, missing } : { ok: true, answers }
-}
-
-/** Human-readable form of one normalized answer, for the brief and the Sheet. */
-export function formatAnswer(question, value) {
-  if (value === null || value === undefined) return ''
-  if (question.type === 'files') return value.map((f) => f.name).join(', ')
-  if (question.type === 'multiselect') return value.join(', ')
-  return String(value)
-}
+// Re-exported individually because these were the module's public surface before
+// the engine was extracted, and four consumers plus the test suite import them by
+// name. The behaviour is now shared with the new-construction form — see
+// intake-schema.js.
+export const {
+  QUESTIONS_BY_ID,
+  REQUIRED_IDS,
+  UPLOAD_QUESTIONS,
+  questionsForSection,
+  isQuestionActive,
+  normalizeAnswer,
+  normalizeAnswers,
+  validateAnswers,
+  formatAnswer,
+  safeHttpUrl,
+} = schema
