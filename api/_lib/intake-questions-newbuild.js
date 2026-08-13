@@ -27,7 +27,7 @@ export const SECTIONS = [
   {
     id: 'basics',
     title: 'The Basics',
-    blurb: 'Quick. Most of this we have already — just confirming we have it right.',
+    blurb: 'Quick. Most of this we have already, so this is just confirming we have it right.',
   },
   {
     id: 'reference',
@@ -46,7 +46,7 @@ export const SECTIONS = [
   },
   {
     id: 'kitchen',
-    title: 'The Kitchen — Layout Only',
+    title: 'The Kitchen: Layout Only',
     blurb: 'Not colours or counters yet. Just where things go, because that has to be right before anything is drawn.',
   },
   {
@@ -84,7 +84,7 @@ export const QUESTIONS = [
     type: 'text',
     section: 'basics',
     required: true,
-    help: 'Both of you — however you would like to be addressed.',
+    help: 'Both of you, however you would like to be addressed.',
   },
   {
     id: 'project_address',
@@ -125,7 +125,7 @@ export const QUESTIONS = [
   },
   {
     id: 'architect',
-    label: 'Architect — name, and should we be copied on their drawings?',
+    label: 'Architect: name, and should we be copied on their drawings?',
     type: 'longtext',
     section: 'basics',
     help: 'Soraia works alongside the architect from the start so the gas, water, and electrical land where the design needs them.',
@@ -137,38 +137,38 @@ export const QUESTIONS = [
   // question is one tap unless we heard it wrong.
   {
     id: 'davis_layout',
-    label: '502 Davis — the layout',
+    label: '502 Davis: the layout',
     type: 'confirm',
     section: 'reference',
-    call: 'You said the layout was the big one — "it was layout a lot".',
+    call: 'You said the layout was the big one. Your words: "it was layout a lot".',
   },
   {
     id: 'davis_island_colour',
-    label: '502 Davis — colour on the island',
+    label: '502 Davis: colour on the island',
     type: 'confirm',
     section: 'reference',
     call: 'You liked the island being a different colour from the rest of the kitchen.',
   },
   {
     id: 'davis_niche',
-    label: '502 Davis — the upstairs niche',
+    label: '502 Davis: the upstairs niche',
     type: 'confirm',
     section: 'reference',
     call: 'You liked the niche upstairs with the tile behind it, and the pop of colour there.',
   },
   {
     id: 'davis_no_wet_bar',
-    label: '502 Davis — but no wet bar',
+    label: '502 Davis: but no wet bar',
     type: 'confirm',
     section: 'reference',
     call: 'You liked how that niche looked, but said you do not see yourselves using a wet bar. So: the look, not the bar.',
   },
   {
     id: 'davis_cabinets',
-    label: 'Cabinets — mid-tone neutral',
+    label: 'Cabinets: mid-tone neutral',
     type: 'confirm',
     section: 'reference',
-    call: '"Neutral cabinets — not too dark, not too blonde."',
+    call: '"Neutral cabinets, not too dark, not too blonde."',
   },
   {
     id: 'davis_arches',
@@ -182,7 +182,7 @@ export const QUESTIONS = [
     label: 'Wood beams, not coffered ceilings',
     type: 'confirm',
     section: 'reference',
-    call: 'Wood beams over the alternative — and coffered ceilings "look heavy".',
+    call: 'Wood beams over the alternative, and coffered ceilings "look heavy".',
   },
   {
     id: 'davis_waterfall',
@@ -200,15 +200,15 @@ export const QUESTIONS = [
     // gold faucets, like the really bright brass gold faucets in our very first
     // house. And I'm like, I can't do it again." The toned-down gold Soraia showed
     // was another client's house.
-    call: 'Matte black or stainless. No gold — you had bright brass in your first house and are not doing it again.',
-    help: 'If this rule holds for cabinet hardware, door hardware, and light fixtures too, say so — it changes what we shortlist everywhere.',
+    call: 'Matte black or stainless. No gold, because you had bright brass in your first house and are not doing it again.',
+    help: 'If this rule holds for cabinet hardware, door hardware, and light fixtures too, say so. It changes what we shortlist everywhere.',
   },
   {
     id: 'davis_front_door',
-    label: 'The front door — what specifically?',
+    label: 'The front door: what specifically?',
     type: 'longtext',
     section: 'reference',
-    help: 'You said you loved the one at 502 Davis. Was it the material, the size, the amount of glass, or the whole thing? If it is mostly glass — do you want it left clear, or treated for privacy?',
+    help: 'You said you loved the one at 502 Davis. Was it the material, the size, the amount of glass, or the whole thing? If it is mostly glass, do you want it left clear or treated for privacy?',
   },
   {
     id: 'davis_dislikes',
@@ -247,18 +247,18 @@ export const QUESTIONS = [
     label: 'How should upstairs work?',
     type: 'longtext',
     section: 'plan',
-    help: 'You floated two ensuites plus a jack-and-jill. Still the plan? And who actually sleeps in each of those rooms — kids, guests, both?',
+    help: 'You floated two ensuites plus a jack-and-jill. Still the plan? And who actually sleeps in each of those rooms: kids, guests, both?',
   },
   {
     id: 'upstairs_landing',
     label: 'The upstairs landing',
     type: 'longtext',
     section: 'plan',
-    help: 'One of you wanted an area upstairs that all the bedrooms open onto. What is it for — somewhere the kids hang out, a second living room, a study space, or just breathing room at the top of the stairs?',
+    help: 'One of you wanted an area upstairs that all the bedrooms open onto. What is it for? Somewhere the kids hang out, a second living room, a study space, or just breathing room at the top of the stairs?',
   },
   {
     id: 'bedroom_or_den',
-    label: 'If you could only have one — the fifth bedroom or the upstairs landing?',
+    label: 'If you could only have one: the fifth bedroom or the upstairs landing?',
     type: 'select',
     section: 'plan',
     options: ['The fifth bedroom', 'The upstairs landing', 'Genuinely torn'],
@@ -272,7 +272,7 @@ export const QUESTIONS = [
     // Sam raised this himself at 03:56 — wall ovens because they are "easier
     // getting the food in and out as we get older." Worth asking straight while
     // the walls are still on paper.
-    help: 'You already mentioned wall ovens being easier as you get older. Same thinking applied to the house: blocking behind bathroom walls for grab bars later, a zero-threshold shower, wider doorways, a flex room on the primary level. All cheap now and expensive later — even if you never use them.',
+    help: 'You already mentioned wall ovens being easier as you get older. Same thinking applied to the house: blocking behind bathroom walls for grab bars later, a zero-threshold shower, wider doorways, a flex room on the primary level. All cheap now and expensive later, even if you never use them.',
   },
 
   // ---- How You Actually Live ----------------------------------------------
@@ -284,7 +284,7 @@ export const QUESTIONS = [
     // Rachel's own frame, 19:26: "every house that we've lived in… why did they do
     // that? Why is that there? Why don't I have this?" She handed us the question;
     // this is the highest-value answer in part 1.
-    help: 'You said it yourself: every house you have lived in has had at least one "why did they do that?". List them. All of them, from every house. Be petty — petty is exactly what is useful here, and it is what Soraia takes into the architect meeting.',
+    help: 'You said it yourself: every house you have lived in has had at least one "why did they do that?". List them. All of them, from every house. Be petty. Petty is exactly what is useful here, and it is what Soraia takes into the architect meeting.',
   },
   {
     id: 'why_dont_i_have_this',
@@ -337,7 +337,7 @@ export const QUESTIONS = [
   },
   {
     id: 'groceries',
-    label: 'Groceries — car to pantry',
+    label: 'Groceries: car to pantry',
     type: 'longtext',
     section: 'living',
     help: 'How that trip should go. It is one of the few things a floor plan can fix permanently.',
@@ -380,7 +380,7 @@ export const QUESTIONS = [
   },
   {
     id: 'island_use',
-    label: 'The island — seating, or work surface?',
+    label: 'The island: seating, or work surface?',
     type: 'select',
     section: 'kitchen',
     options: ['Seating and prep both', 'Mostly seating', 'Work surface only, seating elsewhere', 'Not sure yet'],
@@ -403,7 +403,7 @@ export const QUESTIONS = [
     label: 'Wall ovens again',
     type: 'confirm',
     section: 'kitchen',
-    call: 'You run two Bosch wall ovens in Florida and prefer them to a range — easier getting food in and out.',
+    call: 'You run two Bosch wall ovens in Florida and prefer them to a range, since it is easier getting food in and out.',
     help: 'Same brand again, or open to alternatives at the same level?',
   },
   {
@@ -411,7 +411,7 @@ export const QUESTIONS = [
     label: 'Good and durable, not showpiece',
     type: 'confirm',
     section: 'kitchen',
-    call: 'You said the other house you looked at was over the top — you do not need a $17,000 oven.',
+    call: 'You said the other house you looked at was over the top. You do not need a $17,000 oven.',
   },
   {
     id: 'cooking_fuel',
@@ -423,7 +423,7 @@ export const QUESTIONS = [
       'Induction cooktop',
       'Gas range',
       'Dual fuel range',
-      'Not sure — talk us through it',
+      'Not sure, talk us through it',
     ],
     help: 'This one genuinely has to be decided early: it determines whether a gas line runs to that wall at all.',
   },
@@ -441,7 +441,7 @@ export const QUESTIONS = [
   },
   {
     id: 'beverage_wishlist',
-    label: 'Beverage fridge, wine storage, ice maker, built-in coffee — which are real?',
+    label: 'Beverage fridge, wine storage, ice maker, built-in coffee: which are real?',
     type: 'longtext',
     section: 'kitchen',
     help: 'Real means you would use it weekly. Everything else is a cabinet you lost.',
@@ -451,7 +451,7 @@ export const QUESTIONS = [
     label: 'Pantry',
     type: 'longtext',
     section: 'kitchen',
-    help: 'Walk-in or cabinet? Should it be a proper working room — sink, outlets, small appliances living out on the counter — or finished to match the kitchen?',
+    help: 'Walk-in or cabinet? Should it be a proper working room, with a sink, outlets, and small appliances living out on the counter, or finished to match the kitchen?',
   },
   {
     id: 'microwave_coffee',
@@ -462,7 +462,7 @@ export const QUESTIONS = [
   },
   {
     id: 'kitchen_conveniences',
-    label: 'Built-in conveniences — which do you want, and which are clutter?',
+    label: 'Built-in conveniences: which do you want, and which are clutter?',
     type: 'longtext',
     section: 'kitchen',
     // Sam's spice-rack line got a laugh on the call, but the question under it is
@@ -478,16 +478,16 @@ export const QUESTIONS = [
     uploadKind: 'inspiration',
     section: 'inspiration',
     required: true,
-    help: 'Anything you have saved. Screenshots are fine, blurry is fine, contradictory is fine — we would rather see twenty confusing images than read three tidy sentences.',
+    help: 'Anything you have saved. Screenshots are fine, blurry is fine, contradictory is fine. We would rather see twenty confusing images than read three tidy sentences.',
   },
   {
     id: 'your_own_remodels',
-    label: 'Your own remodels — photos, and the parts you would not repeat',
+    label: 'Your own remodels: photos, and the parts you would not repeat',
     type: 'longtext',
     section: 'inspiration',
     // Rachel offered this at 21:45 and volunteered the second half herself: "there's
     // elements that I wouldn't do again." That half is worth more than the photos.
-    help: 'You mentioned the two bathrooms and the laundry room you did, and that your primary bath there is your favourite thing you have ever remodelled. Upload those above if you can — and tell us the part you said out loud on our call: which elements you would not do again, and why.',
+    help: 'You mentioned the two bathrooms and the laundry room you did, and that your primary bath there is your favourite thing you have ever remodelled. Upload those above if you can, and tell us the part you said out loud on our call: which elements you would not do again, and why.',
   },
   {
     id: 'inspiration_links',
@@ -525,11 +525,11 @@ export const QUESTIONS = [
     label: 'Where is your line on trends?',
     type: 'longtext',
     section: 'direction',
-    help: 'You said you do not want it to look dated and do not want anything super trendy. If something is beautiful now but reads as 2026 in eight years — is that a hard no everywhere, or fine in the small stuff like a light fixture?',
+    help: 'You said you do not want it to look dated and do not want anything super trendy. If something is beautiful now but reads as 2026 in eight years, is that a hard no everywhere, or fine in the small stuff like a light fixture?',
   },
   {
     id: 'spanish_portuguese',
-    label: 'The Spanish/Portuguese read — right or were we projecting?',
+    label: 'The Spanish/Portuguese read: right, or were we projecting?',
     type: 'longtext',
     section: 'direction',
     help: 'Soraia grew up with that architecture and heard it in what you liked. Does that language fit, or does it not sound like your house?',
@@ -549,7 +549,7 @@ export const QUESTIONS = [
     options: [
       'Mostly neutral, with a few moments',
       'Colour and pattern throughout',
-      'High contrast — dark against light',
+      'High contrast, dark against light',
       'Not sure, show us both',
     ],
   },
@@ -567,14 +567,14 @@ export const QUESTIONS = [
     section: 'direction',
     // Rachel wants both, explicitly, at 19:26. Naming the tension now is cheaper
     // than discovering it in a revision round.
-    help: 'You said you want it timeless AND well laid out. Usually that is fine. Occasionally a room can be beautiful or practical but not both — when that happens, which way should we go?',
+    help: 'You said you want it timeless AND well laid out. Usually that is fine. Occasionally a room can be beautiful or practical but not both. When that happens, which way should we go?',
   },
   {
     id: 'room_priorities',
     label: 'Which rooms do you actually care about?',
     type: 'longtext',
     section: 'direction',
-    help: 'Rank them, roughly. And which ones are purely functional — tell us not to overthink those.',
+    help: 'Rank them, roughly. And which ones are purely functional? Tell us not to overthink those.',
   },
   {
     id: 'fixed_picture',
@@ -591,7 +591,7 @@ export const QUESTIONS = [
     type: 'confirm',
     section: 'working',
     call: 'Interiors are mostly Rachel’s call, and the pattern is that she narrows it to two options she likes and Sam picks.',
-    help: 'Any category where that flips — appliances, tech, the garage, the outside?',
+    help: 'Any category where that flips? Appliances, tech, the garage, the outside?',
   },
   {
     id: 'turnaround',
@@ -599,7 +599,7 @@ export const QUESTIONS = [
     type: 'select',
     section: 'working',
     options: ['Same day', '2 business days', 'About a week', 'Depends entirely on the week'],
-    help: 'Your agreement says two business days. We would rather know the real number than the polite one — the schedule is built on it.',
+    help: 'Your agreement says two business days. We would rather know the real number than the polite one. The schedule is built on it.',
   },
   {
     id: 'travel_dates',
@@ -620,7 +620,7 @@ export const QUESTIONS = [
     label: 'Seeing materials in person',
     type: 'longtext',
     section: 'working',
-    help: 'You mentioned you like to see things in person and have a tile shop you use locally. Our plan is to ship you samples as we go, then make one trip down with everything gathered so you can see it all together. Does that work? And is there anything you have already seen and loved — brand, collection, or just a phone photo?',
+    help: 'You mentioned you like to see things in person and have a tile shop you use locally. Our plan is to ship you samples as we go, then make one trip down with everything gathered so you can see it all together. Does that work? And is there anything you have already seen and loved? A brand, a collection, or just a phone photo.',
   },
   {
     id: 'how_to_present',
@@ -630,7 +630,7 @@ export const QUESTIONS = [
     options: [
       'A deck we can read on our own time',
       'Live on a call, walked through',
-      'Both — send it ahead, then talk',
+      'Both: send it ahead, then talk',
     ],
   },
   {
@@ -701,15 +701,15 @@ const schema = makeSchema({
   id: 'newbuild',
   title: 'New construction — part one',
   intro:
-    'This is part one, and it is deliberately not about tile and faucets yet — your architect ' +
+    'This is part one, and it is deliberately not about tile and faucets yet. Your architect ' +
     'has not drawn the house. What we need first is how you live in it, so Soraia can sit down ' +
     'with him and get the plan right. The finish choices come later, once there is something to ' +
     'put them on. Only three things here are required: your names, the address, and some ' +
-    'inspiration photos. Everything else, skip anything you are unsure about — and your answers ' +
+    'inspiration photos. Everything else, skip anything you are unsure about, and your answers ' +
     'save as you go, so you can put it down and come back on the same device.',
   doneMessage:
-    'That is what Soraia needs before she sits down with your architect. Part two — tile, ' +
-    'finishes, fixtures, all of it — comes once there are drawings to put them on. If anything ' +
+    'That is what Soraia needs before she sits down with your architect. Part two, covering ' +
+    'tile, finishes, and fixtures, comes once there are drawings to put them on. If anything ' +
     'changes in the meantime, reopen your link and submit again. It updates rather than duplicates.',
   sections: SECTIONS,
   questions: QUESTIONS,
