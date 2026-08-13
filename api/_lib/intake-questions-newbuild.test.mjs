@@ -67,6 +67,45 @@ t('every confirm question carries the claim it is confirming', () => {
   }
 })
 
+t('no em or en dashes in anything the client reads', () => {
+  // Standing house rule for Soraia-facing copy. Worth a test rather than a comment:
+  // the first draft of this form shipped 43 of them, because an em dash is the most
+  // natural thing in the world to type mid-sentence and nothing downstream complains.
+  const offenders = []
+  const scan = (where, text) => {
+    if (typeof text === 'string' && /[—–]/.test(text)) offenders.push(`${where}: ${text.slice(0, 60)}`)
+  }
+  scan('intro', newbuild.intro)
+  scan('doneMessage', newbuild.doneMessage)
+  for (const s of newbuild.SECTIONS) {
+    scan(`section.title:${s.id}`, s.title)
+    scan(`section.blurb:${s.id}`, s.blurb)
+  }
+  for (const question of newbuild.QUESTIONS) {
+    scan(`label:${question.id}`, question.label)
+    scan(`help:${question.id}`, question.help)
+    scan(`call:${question.id}`, question.call)
+    for (const o of question.options || []) scan(`option:${question.id}`, o)
+  }
+  assert.deepEqual(offenders, [])
+})
+
+t('the STR form holds to the same rule', () => {
+  const offenders = []
+  const scan = (t) => {
+    if (typeof t === 'string' && /[—–]/.test(t)) offenders.push(t.slice(0, 60))
+  }
+  scan(str.intro)
+  scan(str.doneMessage)
+  for (const s of str.SECTIONS) { scan(s.title); scan(s.blurb) }
+  for (const question of str.QUESTIONS) {
+    scan(question.label)
+    scan(question.help)
+    for (const o of question.options || []) scan(o)
+  }
+  assert.deepEqual(offenders, [])
+})
+
 t('every upload question routes somewhere real', async () => {
   const { isValidUploadKind } = await import('./intake-drive.js')
   for (const question of newbuild.UPLOAD_QUESTIONS) {
