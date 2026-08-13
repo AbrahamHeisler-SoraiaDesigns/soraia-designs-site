@@ -14,7 +14,7 @@
 import { verifyIntakeToken } from './_lib/intake-token.js'
 import { applyIntakeCors, parseJsonBody, tokenFailureResponse } from './_lib/intake-http.js'
 import { assertClientFolder } from './_lib/intake-drive.js'
-import { validateAnswers } from './_lib/intake-questions.js'
+import { getForm } from './_lib/intake-forms.js'
 import { writeDesignBrief } from './_lib/intake-brief.js'
 import { writeSubmissionRow } from './_lib/intake-sheet.js'
 
@@ -39,7 +39,14 @@ export default async function handler(req, res) {
   if (!verdict.ok) return tokenFailureResponse(res, verdict)
   const { dealId, folderId, clientName } = verdict.payload
 
-  const check = validateAnswers(body.answers)
+  // Which questionnaire this is. Comes from the request rather than the token —
+  // see intake-forms.js for why that is not a security hole. An unknown value
+  // falls back to the STR form instead of rejecting a submission we already
+  // authorised.
+  const form = getForm(body.form)
+  const schema = form.schema
+
+  const check = schema.validateAnswers(body.answers)
   if (!check.ok) {
     return res.status(400).json({
       ok: false,
@@ -60,7 +67,7 @@ export default async function handler(req, res) {
     const folder = await assertClientFolder(folderId)
     const folderUrl = `https://drive.google.com/drive/folders/${folder.id}`
 
-    const brief = await writeDesignBrief({ folderId, clientName: name, dealId, answers, submittedAt })
+    const brief = await writeDesignBrief({ schema, folderId, clientName: name, dealId, answers, submittedAt })
 
     // The Sheet is deliberately not fatal. If it fails the client has still been
     // recorded where the work actually happens — their own Drive folder — and
@@ -69,6 +76,8 @@ export default async function handler(req, res) {
     let sheet = null
     try {
       sheet = await writeSubmissionRow({
+        schema,
+        tab: form.sheetTab,
         submittedAt,
         dealId,
         clientName: name,
@@ -81,7 +90,7 @@ export default async function handler(req, res) {
     }
 
     console.log(
-      `[intake-submit] deal ${dealId} (${name}) — brief ${brief.created ? 'created' : 'updated'} ${brief.id}` +
+      `[intake-submit] deal ${dealId} (${name}) form=${schema.id} — brief ${brief.created ? 'created' : 'updated'} ${brief.id}` +
         (sheet ? `, sheet row ${sheet.row} ${sheet.updated ? 'updated' : 'appended'}` : ', sheet SKIPPED'),
     )
 

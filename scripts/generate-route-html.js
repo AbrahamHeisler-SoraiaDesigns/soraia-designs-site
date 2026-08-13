@@ -99,6 +99,19 @@ const routes = [
     ogUrl: 'https://www.soraiadesigns.com/intake',
     robots: 'noindex, nofollow',
   },
+  {
+    // The new-construction questionnaire. Same privacy rules as /intake — and it
+    // needs its own static file, because the path is what selects the question
+    // set and Vercel serves static files before it ever reaches the SPA rewrite.
+    path: 'intake/newbuild',
+    title: 'Client Onboarding | Soraia Designs',
+    description: 'Soraia Designs client onboarding form.',
+    canonical: 'https://www.soraiadesigns.com/intake/newbuild',
+    ogTitle: 'Client Onboarding | Soraia Designs',
+    ogDescription: 'Soraia Designs client onboarding form.',
+    ogUrl: 'https://www.soraiadesigns.com/intake/newbuild',
+    robots: 'noindex, nofollow',
+  },
 ]
 
 for (const route of routes) {

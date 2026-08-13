@@ -56,9 +56,11 @@ export default function App() {
         <Route path="/audit/get-started" element={<AuditGetStarted />} />
         <Route path="/audit/requested" element={<AuditRequested />} />
         <Route path="/book" element={<Book />} />
-        {/* Private per-client link (?t=<signed token>). Not linked from anywhere,
-            and noindex'd in generate-route-html.js. */}
-        <Route path="/intake" element={<Intake />} />
+        {/* Private per-client links (?t=<signed token>). Not linked from anywhere,
+            and noindex'd in generate-route-html.js. The path selects the
+            questionnaire — see api/_lib/intake-forms.js. */}
+        <Route path="/intake" element={<Intake form="str" />} />
+        <Route path="/intake/newbuild" element={<Intake form="newbuild" />} />
       </Routes>
     </BrowserRouter>
   )

@@ -10,7 +10,8 @@
 // conversion, so this needs only the `drive` scope and never touches the Docs API.
 import { getAccessToken } from './drive.js'
 import { resolveBriefTarget } from './intake-drive.js'
-import { QUESTIONS, SECTIONS, formatAnswer, isQuestionActive } from './intake-questions.js'
+import { CHANGED_PREFIX, isCorrection } from './intake-schema.js'
+import strSchema from './intake-questions.js'
 
 const DOC_MIME = 'application/vnd.google-apps.document'
 
@@ -33,30 +34,53 @@ function escMultiline(value) {
   return esc(value).replace(/\r?\n/g, '<br/>')
 }
 
-function renderValue(question, value) {
+function renderValue(schema, question, value) {
   if (question.type === 'files') {
     const items = value
       .map((f) => (f.url ? `<li><a href="${esc(f.url)}">${esc(f.name)}</a></li>` : `<li>${esc(f.name)}</li>`))
       .join('')
     return `<ul>${items}</ul>`
   }
-  return `<p>${escMultiline(formatAnswer(question, value))}</p>`
+  return `<p>${escMultiline(schema.formatAnswer(question, value))}</p>`
 }
 
 /**
  * The brief as HTML. Pure — no network — so the layout is unit-testable.
  *
  * Unanswered questions are omitted rather than printed empty. 35 blank headings
- * would bury the ten answers that matter, and only four questions are required.
+ * would bury the ten answers that matter, and most questions are optional.
  */
-export function renderBriefHtml({ clientName, propertyAddress, answers, submittedAt, dealId }) {
+export function renderBriefHtml({ schema = strSchema, clientName, propertyAddress, answers, submittedAt, dealId }) {
+  const { QUESTIONS, SECTIONS, isQuestionActive } = schema
   const parts = []
   parts.push('<html><head><meta charset="utf-8"></head><body>')
   parts.push(`<h1>${esc(briefDocName(clientName))}</h1>`)
   if (propertyAddress) parts.push(`<p><strong>Property:</strong> ${esc(propertyAddress)}</p>`)
   parts.push(`<p><strong>Submitted:</strong> ${esc(submittedAt)}</p>`)
   if (dealId) parts.push(`<p><strong>Deal:</strong> ${esc(dealId)}</p>`)
+  if (schema.title) parts.push(`<p><strong>Form:</strong> ${esc(schema.title)}</p>`)
   parts.push('<hr/>')
+
+  // Corrections first, before anything else.
+  //
+  // A `confirm` question shows the client something we already believe and asks
+  // them to agree. The agreements are noise — we knew those. The disagreements are
+  // the entire reason the question type exists, and burying one twelve headings
+  // down is how a design gets built on a fact the client already corrected.
+  const corrections = QUESTIONS.filter((q) => q.type === 'confirm' && isCorrection(answers[q.id]))
+  if (corrections.length) {
+    parts.push('<h2>⚠ They corrected us on these</h2>')
+    parts.push('<ul>')
+    for (const q of corrections) {
+      const detail = String(answers[q.id]).slice(CHANGED_PREFIX.length).trim()
+      parts.push(
+        `<li><strong>${esc(q.label)}</strong>` +
+          (q.call ? `<br/><em>We had:</em> ${esc(q.call)}` : '') +
+          `<br/><em>They say:</em> ${escMultiline(detail || '(no detail given)')}</li>`,
+      )
+    }
+    parts.push('</ul><hr/>')
+  }
 
   for (const section of SECTIONS) {
     const answered = QUESTIONS.filter(
@@ -66,7 +90,12 @@ export function renderBriefHtml({ clientName, propertyAddress, answers, submitte
     parts.push(`<h2>${esc(section.title)}</h2>`)
     for (const q of answered) {
       parts.push(`<h3>${esc(q.label)}</h3>`)
-      parts.push(renderValue(q, answers[q.id]))
+      // A bare "Confirmed" is meaningless six weeks later without the claim it
+      // was confirming, so the brief carries the original statement with it.
+      if (q.type === 'confirm' && q.call) {
+        parts.push(`<p><em>${esc(q.call)}</em></p>`)
+      }
+      parts.push(renderValue(schema, q, answers[q.id]))
     }
   }
 
@@ -160,12 +189,16 @@ async function updateBriefDoc({ fileId, html }) {
  * resubmit rewrites one Doc instead of leaving Soraia to guess which of three is
  * current. Returns {id, url, created}.
  */
-export async function writeDesignBrief({ folderId, clientName, dealId, answers, submittedAt }) {
+export async function writeDesignBrief({ schema = strSchema, folderId, clientName, dealId, answers, submittedAt }) {
   const brief = await resolveBriefTarget(folderId)
   const name = briefDocName(clientName)
   const html = renderBriefHtml({
+    schema,
     clientName,
-    propertyAddress: answers.property_address || '',
+    // The two forms name this field differently — the STR form asks about a
+    // property, the new-construction form about a project. Check both rather than
+    // silently dropping the address off half the briefs.
+    propertyAddress: answers.property_address || answers.project_address || '',
     answers,
     submittedAt,
     dealId,

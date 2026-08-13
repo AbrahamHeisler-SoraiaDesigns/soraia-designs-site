@@ -14,19 +14,22 @@ const VERSION = 1
 // stale draft does not silently repopulate a form months later.
 const MAX_AGE_MS = 45 * 24 * 60 * 60 * 1000
 
-function key(dealId) {
-  return `${PREFIX}${dealId || 'unknown'}`
+// Scoped by form as well as deal: one client can be sent both questionnaires
+// against the same deal (the new-construction intake ships in two parts), and a
+// shared key would have part two restore part one's answers over the top.
+function key(dealId, form = 'str') {
+  return `${PREFIX}${form}:${dealId || 'unknown'}`
 }
 
-export function loadDraft(dealId) {
+export function loadDraft(dealId, form) {
   if (typeof window === 'undefined' || !dealId) return null
   try {
-    const raw = window.localStorage.getItem(key(dealId))
+    const raw = window.localStorage.getItem(key(dealId, form))
     if (!raw) return null
     const parsed = JSON.parse(raw)
     if (parsed.version !== VERSION) return null
     if (!parsed.savedAt || Date.now() - parsed.savedAt > MAX_AGE_MS) {
-      window.localStorage.removeItem(key(dealId))
+      window.localStorage.removeItem(key(dealId, form))
       return null
     }
     return { answers: parsed.answers || {}, savedAt: parsed.savedAt }
@@ -37,11 +40,11 @@ export function loadDraft(dealId) {
   }
 }
 
-export function saveDraft(dealId, answers) {
+export function saveDraft(dealId, answers, form) {
   if (typeof window === 'undefined' || !dealId) return false
   try {
     window.localStorage.setItem(
-      key(dealId),
+      key(dealId, form),
       JSON.stringify({ version: VERSION, savedAt: Date.now(), answers }),
     )
     return true
@@ -50,10 +53,10 @@ export function saveDraft(dealId, answers) {
   }
 }
 
-export function clearDraft(dealId) {
+export function clearDraft(dealId, form) {
   if (typeof window === 'undefined' || !dealId) return
   try {
-    window.localStorage.removeItem(key(dealId))
+    window.localStorage.removeItem(key(dealId, form))
   } catch {
     /* nothing to do — the draft is a convenience, not a record */
   }
