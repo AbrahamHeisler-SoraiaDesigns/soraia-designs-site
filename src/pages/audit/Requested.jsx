@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import AuditNav from '../../components/AuditNav'
 import Footer from '../../components/Footer'
+import { getFirstTouch } from '../../lib/attribution'
 
 const steps = [
   {
@@ -27,7 +28,39 @@ const steps = [
   },
 ]
 
+// The fast-path embed used to hardcode utm_source=audit&utm_medium=audit-fastpath,
+// so a lead who arrived on a Meta ad and booked here was recorded as audit-fastpath
+// and the paid click never appeared on the booking. Carry the session's first touch
+// in source/medium/campaign when we have one, and mark the fast path in utm_content,
+// which is where later context belongs. With no first touch, the old tags stand.
+function calendlySrc() {
+  const firstTouch = getFirstTouch()
+  const params = new URLSearchParams({ hide_gdpr_banner: '1' })
+
+  const tags = firstTouch.utm_source
+    ? {
+        utm_source: firstTouch.utm_source,
+        utm_medium: firstTouch.utm_medium,
+        utm_campaign: firstTouch.utm_campaign,
+      }
+    : {
+        utm_source: 'audit',
+        utm_medium: 'audit-fastpath',
+        utm_campaign: 'audit-relaunch-2026-07',
+      }
+  for (const [key, value] of Object.entries(tags)) {
+    if (value) params.set(key, value)
+  }
+  params.set('utm_content', 'audit-fastpath')
+
+  return `https://calendly.com/soraiadesigns/str-consult?${params.toString()}`
+}
+
 export default function AuditRequested() {
+  // Read once: rebuilding the src on a re-render would reload the iframe and
+  // throw away whatever time slot the visitor had already picked.
+  const bookingSrc = useMemo(calendlySrc, [])
+
   useEffect(() => {
     document.title = 'Audit Requested | Soraia Designs'
     if (typeof window !== 'undefined' && window.gtag) {
@@ -106,8 +139,9 @@ export default function AuditRequested() {
 
         {/* Speed-to-lead fast-path — book the strategy call NOW, while intent is
             hot. The audit is the deliverable at/after the call, not the gate
-            before it. Calendly = str-consult, tagged utm_medium=audit-fastpath so
-            fast-path books are distinguishable from SMS-booked + email-booked.
+            before it. Calendly = str-consult, tagged utm_content=audit-fastpath so
+            fast-path books are distinguishable from SMS-booked + email-booked
+            without overwriting how the lead actually got here (see calendlySrc).
             Copy = Maya's v2 draft (2026-07-09-funnel-relaunch-copy.md §1), em
             dashes removed per the Soraia copy rule. DRAFT pending Abe sign-off. */}
         <section className="px-6 lg:px-12 py-16 lg:py-24" style={{ backgroundColor: '#0D0D0D' }}>
@@ -127,7 +161,7 @@ export default function AuditRequested() {
             <div className="bg-ivory" style={{ minHeight: 720 }}>
               <iframe
                 title="Book your 30-minute strategy call with Soraia Designs"
-                src="https://calendly.com/soraiadesigns/str-consult?hide_gdpr_banner=1&utm_source=audit&utm_medium=audit-fastpath&utm_campaign=audit-relaunch-2026-07"
+                src={bookingSrc}
                 width="100%"
                 height="720"
                 frameBorder="0"

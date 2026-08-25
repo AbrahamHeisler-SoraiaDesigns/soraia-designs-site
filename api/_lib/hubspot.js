@@ -132,7 +132,10 @@ export function stage1WritebackProps(payload) {
 }
 
 export function auditContactProps(payload) {
-  return {
+  // Stage 1 upserts, so this runs on repeat submits too. Blank utms are dropped
+  // below rather than written, because a second submit made without the tags in
+  // the URL would otherwise erase the acquisition source captured on the first.
+  const props = {
     email: payload.email,
     firstname: payload.firstname || splitName(payload.full_name).firstname,
     lastname: payload.lastname || splitName(payload.full_name).lastname,
@@ -160,6 +163,10 @@ export function auditContactProps(payload) {
     utm_term: payload.utm_term || '',
     ...monitoringPropsForSubmit(payload),
   }
+  for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) {
+    if (props[key] === '' || props[key] == null) delete props[key]
+  }
+  return props
 }
 
 // Stage-2 enrichment: only the fields collected after capture. Blank/missing
