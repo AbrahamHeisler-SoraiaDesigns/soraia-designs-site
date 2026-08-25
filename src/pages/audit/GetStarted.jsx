@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import AuditNav from '../../components/AuditNav'
 import Footer from '../../components/Footer'
 import { fireLeadWithMatching } from '../../lib/pixel'
+import { getFirstTouch } from '../../lib/attribution'
 
 // Same pixel id as the base pixel in index.html.
 const META_PIXEL_ID = '966166489104332'
@@ -28,20 +29,29 @@ function getUtmAndAttribution() {
     const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]+)'))
     return m ? decodeURIComponent(m[1]) : ''
   }
+  // This page is almost always reached by a <Link> click that dropped the ad's
+  // query string, so read the utms live-first and fall back to the session's
+  // first touch. Live wins as a whole group rather than field by field: a lead
+  // who clicks a nurture email link is attributed to that click, and we never
+  // blend one touch's source with another touch's campaign.
+  const firstTouch = getFirstTouch()
+  const hasLiveUtms = Boolean(get('utm_source'))
+  const utm = (k) => (hasLiveUtms ? get(k) : firstTouch[k] || '')
+
   // Synthesize the click-id (_fbc) from fbclid when the pixel hasn't set the
   // cookie yet — without it, ad leads can only attribute view-through, not click.
-  const fbclid = get('fbclid')
+  const fbclid = get('fbclid') || firstTouch.fbclid || ''
   let fbc = cookie('_fbc')
   if (!fbc && fbclid) fbc = `fb.1.${Date.now()}.${fbclid}`
   return {
-    utm_source: get('utm_source'),
-    utm_medium: get('utm_medium'),
-    utm_campaign: get('utm_campaign'),
-    utm_content: get('utm_content'),
-    utm_term: get('utm_term'),
+    utm_source: utm('utm_source'),
+    utm_medium: utm('utm_medium'),
+    utm_campaign: utm('utm_campaign'),
+    utm_content: utm('utm_content'),
+    utm_term: utm('utm_term'),
     referrer: document.referrer || '',
-    landing_page: window.location.href,
-    gclid: get('gclid'),
+    landing_page: hasLiveUtms ? window.location.href : firstTouch.landing_page || window.location.href,
+    gclid: get('gclid') || firstTouch.gclid || '',
     fbclid,
     fbp: cookie('_fbp'),
     fbc,
