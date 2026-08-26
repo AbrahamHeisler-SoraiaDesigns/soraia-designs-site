@@ -505,7 +505,7 @@ export default function AuditLanding() {
                 className="font-sans text-mid-charcoal max-w-2xl leading-relaxed mb-12"
                 style={{ fontSize: 17 }}
               >
-                Five live listings. Click any one to see the property, the listing copy, and the reviews. The audit reads your property the same way these were read.
+                {featuredProperties.length} live listings. Click any one to see the property, the listing copy, and the reviews. The audit reads your property the same way these were read.
               </p>
             </Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

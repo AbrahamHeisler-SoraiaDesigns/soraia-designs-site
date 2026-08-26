@@ -39,7 +39,7 @@ export default function Portfolio() {
           Our Work
         </motion.h2>
 
-        {/* Photo grid — 3 columns, 6 rows */}
+        {/* Photo grid — 3 columns, wraps to the length of galleryImages */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-20">
           {galleryImages.map((img, i) => (
             <motion.div

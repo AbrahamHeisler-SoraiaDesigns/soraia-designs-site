@@ -2,6 +2,12 @@ const R2 = 'https://pub-b732a2cfd217455192c17bafa7883c05.r2.dev/'
 
 export const featuredProperties = [
   {
+    name: 'Desert Social Pool, Hot Tub, Game Room + Mini Golf',
+    location: 'Scottsdale, AZ',
+    href: 'https://www.airbnb.com/rooms/1757043255497897033',
+    image: '/assets/desert-social-scottsdale.jpg',
+  },
+  {
     name: 'Coastal Luxury - Steps to Beach - Sleeps 10',
     location: 'Surf City, NC',
     href: 'https://www.airbnb.com/rooms/1687746803217682269',
@@ -61,6 +67,13 @@ export const galleryImages = [
   { src: '/assets/gallery-43.jpg', alt: 'Surf-themed bedroom with teal accents and palm surfboard art' },
   { src: '/assets/gallery-56.jpg', alt: 'Nautical dining room with blue walls, oar wall decor, and round wood table' },
   { src: '/assets/gallery-58.jpg', alt: 'Boho coastal bedroom with pampas grass mural and rust accents' },
+  { src: '/assets/gallery-59.jpg', alt: 'Twilight fire pit ringed with orange and green Adirondack chairs under a Scottsdale Good Vibes mural' },
+  { src: '/assets/gallery-60.jpg', alt: 'Game room with hexagon ceiling lights, pool table, arcade cabinets and a Desert Paradise neon sign' },
+  { src: '/assets/gallery-61.jpg', alt: 'Living room with terracotta grasscloth wall and a black and white saguaro photography triptych' },
+  { src: '/assets/gallery-62.jpg', alt: 'Living room with adobe fireplace, longhorn skull and burnt orange accents' },
+  { src: '/assets/gallery-63.jpg', alt: 'Sage green panelled wall with a hand-painted cactus mural and rust velvet armchairs' },
+  { src: '/assets/gallery-64.jpg', alt: 'Bedroom with a retro orange wave mural, woven sconces and a tufted leather headboard' },
+  { src: '/assets/gallery-65.jpg', alt: 'Bedroom with a desert mountain mural, brass dome lamps and a black velvet headboard' },
 ]
 
 export const R2_BASE = R2
