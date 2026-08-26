@@ -11,3 +11,4 @@ screenshots
 
 # transient SSR bundle from scripts/prerender-legal.js
 scripts/.prerender-legal.*.cjs
+.env*.local
