@@ -3,6 +3,7 @@ import {
   DELIVERY_BLOCKING_LEAD_STATUSES,
   DELIVERY_BLOCKING_NURTURE_STATUSES,
   EMAIL_KEYS,
+  AUDIT_SUBMITTED_DEAL_STAGE_ID,
   findEngagedDeal,
   NEW_LEAD_DEAL_STAGE_ID,
   reengageHoldActive,
@@ -16,18 +17,26 @@ import { upsertBrevoContact } from './brevo.js'
 import { sendGmailAs, hasRecentInboundFrom, isDryRun } from './gmail.js'
 import { findContactByEmail, getAssociatedDealStages, updateContact } from './hubspot.js'
 
-// The deal stages that keep a contact mailable: the New Lead id AND the stage that
-// fresh "- Audit" deals are actually created in. Coupling these two closes the
-// failure mode where a hardcoded-constant/env drift would flag every brand-new
-// lead's own deal as "engaged" and silently stall the whole ladder past EMAIL_1.
-const NON_ENGAGING_DEAL_STAGES = [NEW_LEAD_DEAL_STAGE_ID, process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID].filter(Boolean)
+// The deal stages that keep a contact mailable: Audit Submitted (where a fresh
+// "- Audit" deal is created), New Lead (where audit-deliver.js moves it once the
+// audit is actually sent), AND whatever HUBSPOT_AUDIT_DEAL_STAGE_ID currently
+// points at. Both real stages are pre-engagement, so neither is evidence a human
+// worked the lead. Keeping the env var in the list closes the failure mode where a
+// constant/env drift would flag every brand-new lead's own deal as "engaged" and
+// silently stall the whole ladder past EMAIL_1.
+const NON_ENGAGING_DEAL_STAGES = [
+  NEW_LEAD_DEAL_STAGE_ID,
+  AUDIT_SUBMITTED_DEAL_STAGE_ID,
+  process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID,
+].filter(Boolean)
 if (
   process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID &&
-  process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID !== NEW_LEAD_DEAL_STAGE_ID
+  process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID !== AUDIT_SUBMITTED_DEAL_STAGE_ID
 ) {
   console.warn(
-    `[nurture] HUBSPOT_AUDIT_DEAL_STAGE_ID (${process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID}) != NEW_LEAD_DEAL_STAGE_ID ` +
-      `(${NEW_LEAD_DEAL_STAGE_ID}) — deal-stage gate treats BOTH as New Lead; reconcile if the pipeline changed.`,
+    `[nurture] HUBSPOT_AUDIT_DEAL_STAGE_ID (${process.env.HUBSPOT_AUDIT_DEAL_STAGE_ID}) != ` +
+      `AUDIT_SUBMITTED_DEAL_STAGE_ID (${AUDIT_SUBMITTED_DEAL_STAGE_ID}) — intake is not landing in ` +
+      `Audit Submitted; the gate still treats it as non-engaging, but reconcile the env var.`,
   )
 }
 

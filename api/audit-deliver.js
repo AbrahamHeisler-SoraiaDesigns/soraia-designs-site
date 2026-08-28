@@ -28,7 +28,7 @@
 
 import { sendNurtureEmail } from './_lib/nurture.js'
 import { EMAIL_KEYS } from './_lib/audit-config.js'
-import { findContactByEmail, buildContactUrl } from './_lib/hubspot.js'
+import { advanceAuditDealToNewLead, findContactByEmail, buildContactUrl } from './_lib/hubspot.js'
 import { isoNow } from './_lib/audit-utils.js'
 
 function deliverSecret() {
@@ -181,6 +181,20 @@ export default async function handler(req, res) {
 
   const didSend = !!(released?.ok && !released.skipped)
 
+  // The deal graduates Audit Submitted -> New Lead only on a real send, and only if
+  // nobody has already moved it further along. Best-effort by design: the audit is
+  // already in the prospect's inbox by now, so a HubSpot hiccup here must not turn a
+  // successful delivery into a 502 the operator would retry.
+  let dealMove = null
+  if (didSend) {
+    try {
+      dealMove = await advanceAuditDealToNewLead(contact.id)
+    } catch (error) {
+      dealMove = { error: String(error) }
+      console.error('deal_stage_advance_failed', contact.id, String(error))
+    }
+  }
+
   const contactUrl = buildContactUrl(contact.id)
   const result = {
     ok: didSend,
@@ -192,6 +206,7 @@ export default async function handler(req, res) {
     audit_status: didSend ? 'delivered' : (contact.audit_status || 'requested'),
     audit_pdf_url: didSend ? auditPdfUrl : (contact.audit_pdf_url || null),
     releasedEmailKey: didSend ? emailKey : null,
+    dealMove,
     customCopy: !!customEmail,
     released,
     at: isoNow(),
