@@ -92,6 +92,13 @@ export const EMAIL_KEYS = {
 // pipelines (e.g. a Full Service deal) without needing to enumerate every pipeline.
 export const NEW_LEAD_DEAL_STAGE_ID = '3427549892'
 
+// Audit Submitted (Abe, 2026-08-28). A deal now enters the Sales Pipeline HERE, not
+// in New Lead, and only moves to New Lead once the audit has actually been emailed
+// (api/audit-deliver.js). The point is a board you can read: everyone in Audit
+// Submitted is still owed a deliverable. Both stages are pre-engagement — neither
+// means a human has worked the lead — so both are non-engaging for the nurture gate.
+export const AUDIT_SUBMITTED_DEAL_STAGE_ID = '4213974728'
+
 // Pure decision for the deal-stage gate (kept here — audit-config has no
 // side-effecting imports — so it's unit-testable in isolation). A deal counts as
 // "engaged" (a human moved it forward) only if it has a real stage that is NOT one

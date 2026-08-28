@@ -1,4 +1,10 @@
-import { HUBSPOT_OWNER_ID, HUBSPOT_PORTAL_ID, HUBSPOT_SEARCH_PROPS } from './audit-config.js'
+import {
+  AUDIT_SUBMITTED_DEAL_STAGE_ID,
+  HUBSPOT_OWNER_ID,
+  HUBSPOT_PORTAL_ID,
+  HUBSPOT_SEARCH_PROPS,
+  NEW_LEAD_DEAL_STAGE_ID,
+} from './audit-config.js'
 import { addressKey, addressKeyFromDeal, formatPropertyLine, isoNow, splitName } from './audit-utils.js'
 
 function requireKey() {
@@ -389,6 +395,39 @@ async function findDealForAddress(contactId, payload) {
   })
   const rows = (full?.results || []).map((r) => ({ id: r.id, ...r.properties }))
   return rows.find((r) => addressKeyFromDeal(r) === wanted) || null
+}
+
+// Audit Submitted -> New Lead on delivery (Abe, 2026-08-28). "Audit Submitted"
+// means we owe this person a deliverable; the moment the audit actually goes out
+// the deal graduates to New Lead. Called from api/audit-deliver.js only AFTER Gmail
+// returns a message id, so the stage never claims a delivery that did not happen.
+//
+// Deliberately one-directional and narrow: ONLY a deal sitting in Audit Submitted
+// is touched. If a human already moved the deal forward (Appointment Booked, Hot
+// List, Closed Won) — which happens whenever Abe books the call before the audit is
+// written — this is a no-op rather than a walk backwards. Same reasoning as the
+// preservedStage branch in upsertAuditDeal.
+//
+// Throws on API failure. The caller treats that as non-fatal: a delivered audit
+// with a stale stage is a bookkeeping problem, a 502 on a successful send is a
+// double-send waiting to happen.
+export async function advanceAuditDealToNewLead(contactId) {
+  if (!contactId) return { moved: [], skipped: [] }
+  const deals = await getAssociatedDealStages(contactId)
+  const moved = []
+  const skipped = []
+  for (const deal of deals) {
+    if (deal.dealstage !== AUDIT_SUBMITTED_DEAL_STAGE_ID) {
+      skipped.push({ id: deal.id, dealstage: deal.dealstage })
+      continue
+    }
+    await hubspotFetch(`/crm/v3/objects/deals/${deal.id}`, {
+      method: 'PATCH',
+      body: { properties: { dealstage: NEW_LEAD_DEAL_STAGE_ID } },
+    })
+    moved.push({ id: deal.id, from: AUDIT_SUBMITTED_DEAL_STAGE_ID, to: NEW_LEAD_DEAL_STAGE_ID })
+  }
+  return { moved, skipped }
 }
 
 export async function upsertAuditDeal({ contactId, payload, driveFolderUrl, auditReportUrl }) {
