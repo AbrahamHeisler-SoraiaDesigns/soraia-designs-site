@@ -13,7 +13,7 @@ const steps = [
   },
   {
     n: '02',
-    title: 'A senior strategist audits the property',
+    title: 'Our AI-powered process prepares your audit',
     body: 'Listing photos, design lane, comp-set patterns, revenue math, and an honest read on what your budget can and cannot do.',
   },
   {
@@ -103,7 +103,7 @@ export default function AuditRequested() {
               className="font-sans text-mid-charcoal mb-4 leading-relaxed"
               style={{ fontSize: 18 }}
             >
-              Thanks for the request. A senior strategist is starting on your property today. Expect your written audit in your inbox within 5 business days.
+              Thanks for the request. Our AI-powered process will prepare your property audit. Reports are generated automatically and are not individually reviewed by Soraia before delivery. Expect your written audit in your inbox within 5 business days.
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 16 }}
