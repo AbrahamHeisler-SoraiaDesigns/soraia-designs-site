@@ -248,7 +248,7 @@ export function buildEmailContent(emailKey, contact) {
           `Thanks for the audit request on <strong>${propertyLine}</strong>.`,
           `Here's how this works:`,
         ]) + bullets([
-          '<strong>A senior strategist starts on your property today.</strong> Not an automated report. Actual eyes on your listing, your comps, and your design. Soraia Heisler reviews every audit personally before it ships.',
+          '<strong>We prepare your audit with an AI-powered process we\'ve built and refined around our design approach.</strong> It uses available property and market information to identify opportunities and suggest next steps. Reports are generated automatically and are not individually reviewed by Soraia before delivery.',
           `<strong>Expect your written audit inside 5 business days.</strong> It'll cover ADR + RevPAR benchmarking, listing visibility, design-to-revenue gaps, forced-equity opportunities, and a prioritized roadmap.`,
           '<strong>The audit is yours.</strong> Whether or not we ever work together, you walk away with the report.',
         ]) + htmlParagraphs([
@@ -261,7 +261,7 @@ export function buildEmailContent(emailKey, contact) {
     case EMAIL_KEYS.EMAIL_2:
       return {
         subject: `Your audit on ${propertyStreet}, yours to keep`,
-        previewText: 'PDF attached. Senior strategist notes inside.',
+        previewText: 'Your AI-powered property audit is ready.',
         html: htmlParagraphs([
           `Hi ${name},`,
           `Your STR audit for <strong>${propertyLine}</strong> is ready.`,
