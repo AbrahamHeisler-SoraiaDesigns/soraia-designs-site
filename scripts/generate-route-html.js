@@ -43,11 +43,11 @@ const routes = [
     path: 'audit',
     title: 'Free STR Property Audit | Soraia Designs',
     description:
-      'Get a free STR property audit from Soraia Designs. ADR benchmarking against top-quartile comps, comp-set differentiator scan, three-band revenue case, and an honest budget read. Senior strategist on every audit. No pitch.',
+      'Get a free AI-powered STR property audit from Soraia Designs. Property and market analysis, design opportunities, and suggested next steps.',
     canonical: 'https://www.soraiadesigns.com/audit',
     ogTitle: 'Free STR Property Audit | Soraia Designs',
     ogDescription:
-      'Free STR property audit — ADR benchmarking, comp-set scan, three-band revenue case, honest budget read. Senior strategist on every audit.',
+      'Free AI-powered STR property audit from Soraia Designs. Property and market analysis, design opportunities, and suggested next steps.',
     ogUrl: 'https://www.soraiadesigns.com/audit',
     robots: 'index, follow',
   },
@@ -55,11 +55,11 @@ const routes = [
     path: 'audit/get-started',
     title: 'Request Your Free STR Property Audit | Soraia Designs',
     description:
-      'Tell us about your STR property. We pull comps, audit your listing, and deliver a written report in 5 business days. Senior strategist on every audit.',
+      'Tell us about your STR property. Our AI-powered process prepares your written audit within 5 business days. Reports are generated automatically.',
     canonical: 'https://www.soraiadesigns.com/audit/get-started',
     ogTitle: 'Request Your Free STR Property Audit | Soraia Designs',
     ogDescription:
-      'Request a free STR property audit. Senior strategist reviews your listing, comps, and design through an investor lens.',
+      'Request a free AI-powered STR property audit. Reports are generated automatically and are not individually reviewed by Soraia before delivery.',
     ogUrl: 'https://www.soraiadesigns.com/audit/get-started',
     robots: 'noindex, nofollow',
   },
@@ -67,7 +67,7 @@ const routes = [
     path: 'audit/requested',
     title: 'Audit Requested — Soraia Designs',
     description:
-      'Your STR property audit is in motion. A senior strategist is starting on your property today. Expect your written audit within 5 business days.',
+      'Your AI-powered STR property audit is in motion. Reports are generated automatically. Expect your written audit within 5 business days.',
     canonical: 'https://www.soraiadesigns.com/audit/requested',
     ogTitle: 'Audit Requested — Soraia Designs',
     ogDescription: 'Your STR property audit is in motion. Expect your written report within 5 business days.',

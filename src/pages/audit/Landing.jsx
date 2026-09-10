@@ -89,7 +89,7 @@ export default function AuditLanding() {
     }
     setMeta(
       'description',
-      'Get a free STR property audit from Soraia Designs. ADR benchmarking against top-quartile comps, comp-set differentiator scan, three-band revenue case, and an honest budget read. Senior strategist on every audit. No pitch.'
+      'Get a free AI-powered STR property audit from Soraia Designs. Property and market analysis, design opportunities, and suggested next steps.'
     )
     setMeta(
       'keywords',
@@ -136,7 +136,7 @@ export default function AuditLanding() {
                 className="font-sans text-stone/90 max-w-3xl leading-relaxed mb-10"
                 style={{ fontSize: 'clamp(17px, 1.4vw, 20px)' }}
               >
-                A senior strategist reviews your listing, comps, and design through an investor's lens — and shows you exactly where your nightly rate, appraisal value, and exit premium can move. Cash flow now, appraisal lift next, exit premium long. No pitch, no template, just the report.
+                We prepare your audit with an AI-powered process we've built and refined around our design approach. It uses available property and market information to identify opportunities and suggest next steps. Reports are generated automatically and are not individually reviewed by Soraia before delivery.
               </p>
             </Reveal>
             <Reveal delay={3}>
@@ -345,7 +345,7 @@ export default function AuditLanding() {
                 className="font-sans text-mid-charcoal leading-relaxed mb-6"
                 style={{ fontSize: 18 }}
               >
-                Soraia Heisler leads Soraia Designs, a virtual STR design strategy firm working with equity-focused investors across Miami, Tampa, Blue Ridge, and the Poconos. Design decisions are grounded in market data, not personal taste. Every audit gets her eyes — and a senior strategist's read on your submarket — before it lands in your inbox.
+                Soraia Heisler leads Soraia Designs, a virtual STR design strategy firm working with equity-focused investors across Miami, Tampa, Blue Ridge, and the Poconos. Design decisions are grounded in market data, not personal taste.
               </p>
             </Reveal>
             <Reveal delay={3}>
@@ -618,7 +618,7 @@ export default function AuditLanding() {
                 className="font-sans text-stone/90 mb-10 leading-relaxed"
                 style={{ fontSize: 17 }}
               >
-                Tell us about the property. We'll pull comps, audit the listing, and have your written report back inside 5 business days. Senior strategist on every audit — no auto-generated reports.
+                Tell us about the property. We'll have your AI-powered written report back inside 5 business days. Reports are generated automatically and are not individually reviewed by Soraia before delivery.
               </p>
             </Reveal>
             <Reveal delay={3}>
