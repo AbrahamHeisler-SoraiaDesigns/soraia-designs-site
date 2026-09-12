@@ -249,7 +249,12 @@ export const QUESTIONS = [
     uploadKind: 'inspiration',
     section: 'style',
     required: true,
-    help: 'Rooms, styles, or details you love. Screenshots from Pinterest, Instagram, or Airbnb listings all work. We cannot start your mood board without these.',
+    // Twenty is the floor Abe set on 2026-09-12, and it is a floor for a reason:
+    // a handful of photos reads as one room someone liked, not as a direction.
+    // Soraia cannot pull a palette out of three screenshots, so the mood board
+    // stalls and the stall lands on us.
+    minFiles: 20,
+    help: 'At least 20 of them. Rooms, styles, or details you love. Screenshots from Pinterest, Instagram, or Airbnb listings all work. Twenty sounds like a lot, but it is what lets us see the pattern in what you like rather than guess at it, and we cannot start your mood board without them.',
   },
   {
     id: 'inspiration_notes',
@@ -321,9 +326,9 @@ const schema = makeSchema({
   id: 'str',
   title: 'STR onboarding',
   intro:
-    'Four questions are required: your name, the address, your furnishings budget, and your ' +
-    'inspiration photos. Everything else helps, but leave blank anything you are unsure about. ' +
-    'Your answers save as you go, so you can finish this later on the same device.',
+    'Four questions are required: your name, the address, your furnishings budget, and at ' +
+    'least 20 inspiration photos. Everything else helps, but leave blank anything you are ' +
+    'unsure about. Your answers save as you go, so you can finish this later on the same device.',
   doneMessage:
     'Your photos are filed and Soraia has what she needs to start your mood board. If anything ' +
     'changes, reopen your link and submit again. It updates rather than duplicates.',

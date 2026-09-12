@@ -78,6 +78,9 @@ t('/intake sends no referrer', () => {
 
 // --- 2. required file answers need a real Drive id ------------------------
 const BASE = { full_name: 'A', property_address: 'B', total_furnishings_budget: 'C' }
+// The photo floor is 20 (2026-09-12), so "satisfies the requirement" means 20 real
+// uploads. These cases are about whether a fabricated entry counts, not about the count.
+const real20 = Array.from({ length: 20 }, (_, i) => ({ name: `r${i}.jpg`, id: `ID${i}` }))
 
 t('a fabricated file list no longer satisfies the required photos', () => {
   const r = validateAnswers({ ...BASE, inspiration_files: [{ name: 'never-uploaded.jpg' }] })
@@ -85,18 +88,19 @@ t('a fabricated file list no longer satisfies the required photos', () => {
   assert.ok(r.missing.some((m) => m.id === 'inspiration_files'))
 })
 
-t('a real upload (has a Drive id) still satisfies it', () => {
-  const r = validateAnswers({ ...BASE, inspiration_files: [{ name: 'k.jpg', id: '1AbC' }] })
+t('real uploads (each with a Drive id) still satisfy it', () => {
+  const r = validateAnswers({ ...BASE, inspiration_files: real20 })
   assert.strictEqual(r.ok, true)
 })
 
-t('one real file among fabricated ones is enough', () => {
-  const r = validateAnswers({ ...BASE, inspiration_files: [{ name: 'a.jpg' }, { name: 'b.jpg', id: 'x' }] })
-  assert.strictEqual(r.ok, true)
+t('fabricated files pad the list without counting toward the floor', () => {
+  const padded = [...real20.slice(0, 19), { name: 'a.jpg' }, { name: 'b.jpg' }]
+  assert.strictEqual(validateAnswers({ ...BASE, inspiration_files: padded }).ok, false)
+  assert.strictEqual(validateAnswers({ ...BASE, inspiration_files: [...padded, real20[19]] }).ok, true)
 })
 
 t('non-required file questions are unaffected', () => {
-  const r = validateAnswers({ ...BASE, inspiration_files: [{ name: 'k.jpg', id: '1' }],
+  const r = validateAnswers({ ...BASE, inspiration_files: real20,
     property_photos: [{ name: 'p.jpg' }] })
   assert.strictEqual(r.ok, true)
 })

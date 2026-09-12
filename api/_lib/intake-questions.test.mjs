@@ -15,6 +15,7 @@ const {
   normalizeAnswers,
   validateAnswers,
 } = await import('./intake-questions.js')
+const schema = (await import('./intake-questions.js')).default
 
 let passed = 0
 const t = (name, fn) => {
@@ -110,11 +111,16 @@ t('normalizeAnswers drops unknown keys', () => {
 })
 
 // --- validation ------------------------------------------------------------
+// 20 inspiration photos is the floor (2026-09-12), so the happy path has to carry
+// a full set. A one-photo fixture would pass every other assertion and hide it.
+const photos = (n, prefix = 'insp') =>
+  Array.from({ length: n }, (_, i) => ({ name: `${prefix}-${i}.jpg`, id: `ID${i}` }))
+
 const complete = {
   full_name: 'Dhruvika Patel',
   property_address: '4819 Ocean Blvd, Destin',
   total_furnishings_budget: '$85,000',
-  inspiration_files: [{ name: 'living-room.jpg', id: 'A1' }],
+  inspiration_files: photos(20),
 }
 
 t('a complete submission validates', () => {
@@ -128,6 +134,33 @@ t('missing inspiration photos is a validation failure — the whole point of the
   const r = validateAnswers(rest)
   assert.equal(r.ok, false)
   assert.deepEqual(r.missing.map((m) => m.id), ['inspiration_files'])
+})
+
+t('nineteen photos is not twenty', () => {
+  const r = validateAnswers({ ...complete, inspiration_files: photos(19) })
+  assert.equal(r.ok, false)
+  assert.deepEqual(r.missing.map((m) => m.id), ['inspiration_files'])
+})
+
+t('the shortfall message counts, rather than saying "we do need this"', () => {
+  const r = validateAnswers({ ...complete, inspiration_files: photos(7) })
+  assert.match(r.missing[0].message, /at least 20/)
+  assert.match(r.missing[0].message, /7 so far/)
+})
+
+t('more than twenty is fine', () => {
+  assert.equal(validateAnswers({ ...complete, inspiration_files: photos(34) }).ok, true)
+})
+
+t('fabricated files do not count toward the twenty', () => {
+  const real = photos(19)
+  const padded = [...real, { name: 'never-uploaded.jpg' }]
+  assert.equal(validateAnswers({ ...complete, inspiration_files: padded }).ok, false)
+})
+
+t('the intro promises the same minimum the schema enforces', () => {
+  assert.match(schema.intro, /at least 20 inspiration photos/)
+  assert.equal(QUESTIONS_BY_ID.get('inspiration_files').minFiles, 20)
 })
 
 t('an empty file array does not satisfy the requirement', () => {
