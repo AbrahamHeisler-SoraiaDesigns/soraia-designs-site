@@ -237,7 +237,7 @@ export default function AuditGetStarted() {
               </h1>
               <p className="font-sans text-mid-charcoal mb-8 leading-relaxed max-w-2xl" style={{ fontSize: 17 }}>
                 {step === 1
-                  ? 'Senior strategist on every audit. Written report back within 48 hours.'
+                  ? 'AI-powered property audit. Reports are generated automatically and are not individually reviewed by Soraia before delivery.'
                   : 'Three quick questions decide what we analyze and the plan we send back.'}
               </p>
 
