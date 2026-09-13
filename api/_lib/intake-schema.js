@@ -100,15 +100,56 @@ export function formatAnswer(question, value) {
 }
 
 /**
- * Has a required file question actually been satisfied?
+ * How many files on this answer are real uploads.
  *
  * A filename alone is not evidence: the answers payload is client-supplied, so
  * `[{name:'kitchen.jpg'}]` with nothing behind it would otherwise pass and the
  * brief would claim inspiration photos that are not in Drive. A real upload comes
  * back from /api/intake-upload-url with a Drive file id, so that is what counts.
  */
-function fileAnswerSatisfied(value) {
-  return Array.isArray(value) && value.some((f) => f && f.id)
+export function countUploadedFiles(value) {
+  return Array.isArray(value) ? value.filter((f) => f && f.id).length : 0
+}
+
+/**
+ * How many files a question actually demands.
+ *
+ * `minFiles` implies required. Declaring a minimum and forgetting the `required`
+ * flag would otherwise produce a question that silently accepts zero files, which
+ * is the exact class of drift this file exists to prevent — the client and the
+ * server would agree with each other and both be wrong.
+ */
+export function minFilesFor(question) {
+  if (!question || question.type !== 'files') return 0
+  const min = Number(question.minFiles) || 0
+  if (min > 0) return min
+  return question.required ? 1 : 0
+}
+
+/** True when a question is required, counting a file minimum as a requirement. */
+export function isRequired(question) {
+  return Boolean(question?.required) || minFilesFor(question) > 0
+}
+
+/**
+ * Check one file answer against its minimum.
+ *
+ * Returns the counts as well as the verdict so the uploader can show "7 of 20"
+ * while the client is still picking. A minimum nobody can see their progress
+ * against just becomes a rejection at submit time, after the work is done.
+ */
+export function fileRequirement(question, value) {
+  const min = minFilesFor(question)
+  const have = countUploadedFiles(value)
+  const ok = have >= min
+  let message = null
+  if (!ok) {
+    message =
+      min === 1
+        ? 'This one we do need.'
+        : `We need at least ${min}. You have ${have} so far.`
+  }
+  return { min, have, ok, message }
 }
 
 /**
@@ -143,17 +184,25 @@ export function makeSchema({ id, title, intro, doneMessage, sections, questions 
     return out
   }
 
-  /** Returns {ok:true, answers} or {ok:false, missing:[{id,label}]}. */
+  /**
+   * Returns {ok:true, answers} or {ok:false, missing:[{id,label,message}]}.
+   *
+   * `message` is per-question because "This one we do need." is a lie on a
+   * question that wants twenty photos and has seven. The UI renders it verbatim.
+   */
   function validateAnswers(raw = {}) {
     const answers = normalizeAnswers(raw)
-    const missing = questions
-      .filter((q) => {
-        if (!q.required || !isQuestionActive(q, answers)) return false
-        const value = answers[q.id]
-        if (value == null) return true
-        return q.type === 'files' ? !fileAnswerSatisfied(value) : false
-      })
-      .map((q) => ({ id: q.id, label: q.label }))
+    const missing = []
+    for (const q of questions) {
+      if (!isRequired(q) || !isQuestionActive(q, answers)) continue
+      const value = answers[q.id]
+      if (q.type === 'files') {
+        const { ok, message } = fileRequirement(q, value)
+        if (!ok) missing.push({ id: q.id, label: q.label, message })
+        continue
+      }
+      if (value == null) missing.push({ id: q.id, label: q.label, message: 'This one we do need.' })
+    }
     return missing.length ? { ok: false, missing } : { ok: true, answers }
   }
 
@@ -175,10 +224,13 @@ export function makeSchema({ id, title, intro, doneMessage, sections, questions 
     SECTIONS: sections,
     QUESTIONS: questions,
     QUESTIONS_BY_ID,
-    REQUIRED_IDS: questions.filter((q) => q.required).map((q) => q.id),
+    REQUIRED_IDS: questions.filter(isRequired).map((q) => q.id),
     UPLOAD_QUESTIONS: questions.filter((q) => q.type === 'files'),
     questionsForSection,
     isQuestionActive,
+    isRequired,
+    minFilesFor,
+    fileRequirement,
     normalizeAnswer,
     normalizeAnswers,
     validateAnswers,

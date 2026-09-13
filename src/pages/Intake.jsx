@@ -243,7 +243,7 @@ export default function Intake({ form = 'str' }) {
 
     const check = validateAnswers(answers)
     if (!check.ok) {
-      setErrors(Object.fromEntries(check.missing.map((m) => [m.id, 'This one we do need.'])))
+      setErrors(Object.fromEntries(check.missing.map((m) => [m.id, m.message || 'This one we do need.'])))
       setSubmitError(`Still needed: ${check.missing.map((m) => m.label).join(', ')}`)
       jumpToFirstMissing(check.missing)
       return
@@ -260,7 +260,7 @@ export default function Intake({ form = 'str' }) {
       const body = await res.json().catch(() => ({}))
       if (!res.ok || !body.ok) {
         if (body.missing?.length) {
-          setErrors(Object.fromEntries(body.missing.map((m) => [m.id, 'This one we do need.'])))
+          setErrors(Object.fromEntries(body.missing.map((m) => [m.id, m.message || 'This one we do need.'])))
           jumpToFirstMissing(body.missing)
         }
         throw new Error(body.message || 'We could not save your answers. Please try again.')

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Check, Loader2, Paperclip, X } from 'lucide-react'
 import { ACCEPT, formatBytes, uploadIntakeFile } from '../../lib/intake-upload-client'
+import { countUploadedFiles, minFilesFor } from '../../../api/_lib/intake-schema'
 
 // Uploads start the moment files are chosen rather than on submit. A client who
 // picks 30 photos and then hits Submit would sit on a blank screen for minutes;
@@ -73,6 +74,11 @@ export default function FileUploader({ question, token, value = [], onChange, on
     }
   }
 
+  // A minimum nobody can see their progress against is just a rejection waiting at
+  // submit time, after the client has done the work. Count it in front of them.
+  const min = minFilesFor(question)
+  const have = countUploadedFiles(value)
+
   const remove = (index) => commit(value.filter((_, i) => i !== index))
   const retry = (key) => {
     const item = inFlight.find((f) => f.key === key)
@@ -120,6 +126,14 @@ export default function FileUploader({ question, token, value = [], onChange, on
         <p className="font-sans text-mid-charcoal/55 text-sm mt-3">
           or drag them here · up to 100 MB each
         </p>
+        {min > 1 && (
+          <p
+            className={`font-sans text-sm mt-2 ${have >= min ? 'text-brass' : 'text-mid-charcoal/70'}`}
+            aria-live="polite"
+          >
+            {have >= min ? `${have} uploaded. That is plenty.` : `${have} of ${min} uploaded`}
+          </p>
+        )}
       </div>
 
       {(value.length > 0 || inFlight.length > 0) && (

@@ -227,7 +227,10 @@ export const QUESTIONS = [
     uploadKind: 'inspiration',
     section: 'direction',
     required: true,
-    help: 'Anything you have saved. Screenshots are fine, blurry is fine, contradictory is fine. We would rather see twenty confusing images than read three tidy sentences.',
+    // Same floor as the STR form, set 2026-09-12. The help text here already told
+    // people twenty confusing images beat three tidy sentences; now the form means it.
+    minFiles: 20,
+    help: 'At least 20. Anything you have saved. Screenshots are fine, blurry is fine, contradictory is fine. We would rather see twenty confusing images than read three tidy sentences.',
   },
   {
     id: 'inspiration_links',
@@ -245,6 +248,18 @@ export const QUESTIONS = [
   },
 
   // ---- Money and Process --------------------------------------------------
+  {
+    // Added 2026-09-12. This form shipped with no budget question at all, which
+    // made it impossible to hold a new-construction client to the same gate as an
+    // STR client. Furniture and finishes only — the build budget is the builder's
+    // number and is not ours to design against.
+    id: 'furnishings_budget',
+    label: 'Total budget for furniture, fixtures and finishes',
+    type: 'text',
+    section: 'practical',
+    required: true,
+    help: 'A range is fine. This is separate from what you are paying your builder, and it is the single number that shapes every recommendation we make. We cannot start without it.',
+  },
   {
     id: 'spend_vs_save',
     label: 'Where should the money show, and where does it genuinely not matter?',
@@ -273,9 +288,10 @@ const schema = makeSchema({
   title: 'New construction',
   intro:
     'This is about how you live, not about tile. Twenty-odd questions, most of them short, ' +
-    'and it should take you twenty minutes. Only three are required: your names, the address, ' +
-    'and some inspiration photos. Skip anything you are unsure about, and your answers save as ' +
-    'you go, so you can put it down and come back on the same device.',
+    'and it should take you twenty minutes. Only four are required: your names, the address, ' +
+    'your budget for furniture and finishes, and at least 20 inspiration photos. Skip anything ' +
+    'you are unsure about, and your answers save as you go, so you can put it down and come ' +
+    'back on the same device.',
   doneMessage:
     'That is what we need to get started. Your photos are filed and your designer has what she ' +
     'needs for the first conversation about your plan. If anything changes, reopen your link and ' +

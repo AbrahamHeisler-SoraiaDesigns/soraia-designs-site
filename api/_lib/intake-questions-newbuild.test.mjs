@@ -140,19 +140,51 @@ t('the STR form holds to the same dash rule', () => {
   assert.deepEqual(offenders, [])
 })
 
-t('exactly three questions are required, and they are the three we promise', () => {
-  // The intro copy tells the client "only three are required". If that number and
+t('exactly four questions are required, and they are the four we promise', () => {
+  // The intro copy tells the client "only four are required". If that number and
   // this list drift, the form lies to them on the first screen.
-  assert.deepEqual(newbuild.REQUIRED_IDS, ['full_name', 'project_address', 'inspiration_files'])
-  assert.match(newbuild.intro, /three are required/)
+  assert.deepEqual(newbuild.REQUIRED_IDS, [
+    'full_name',
+    'project_address',
+    'inspiration_files',
+    'furnishings_budget',
+  ])
+  assert.match(newbuild.intro, /four are required/)
+})
+
+t('the budget question exists and is required — this form shipped without one', () => {
+  const budget = newbuild.QUESTIONS_BY_ID.get('furnishings_budget')
+  assert.ok(budget, 'new construction has no budget question')
+  assert.equal(budget.required, true)
+  assert.equal(budget.section, 'practical')
+})
+
+t('inspiration photos have the same 20 floor as the STR form', () => {
+  assert.equal(newbuild.QUESTIONS_BY_ID.get('inspiration_files').minFiles, 20)
+  assert.match(newbuild.intro, /at least 20 inspiration photos/)
+})
+
+t('nineteen photos does not pass the new-construction form either', () => {
+  const photos = (n) => Array.from({ length: n }, (_, i) => ({ name: `i${i}.jpg`, id: `X${i}` }))
+  const base = {
+    full_name: 'Kate and Tom',
+    project_address: '19 Ridge Rd',
+    furnishings_budget: '$120,000',
+  }
+  assert.equal(newbuild.validateAnswers({ ...base, inspiration_files: photos(19) }).ok, false)
+  assert.equal(newbuild.validateAnswers({ ...base, inspiration_files: photos(20) }).ok, true)
 })
 
 // --- validation ------------------------------------------------------------
+// Twenty real uploads, since that is the floor every valid submission has to clear.
+const set20 = Array.from({ length: 20 }, (_, i) => ({ name: `bath-${i}.jpg`, id: `file${i}` }))
+
 t('a minimal valid submission passes', () => {
   const res = newbuild.validateAnswers({
     full_name: 'A Client',
     project_address: '1 Example Dr',
-    inspiration_files: [{ name: 'bath.jpg', id: 'file123' }],
+    furnishings_budget: '$90,000',
+    inspiration_files: set20,
   })
   assert.equal(res.ok, true)
 })
@@ -161,22 +193,29 @@ t('inspiration photos with no Drive id do not satisfy the requirement', () => {
   const res = newbuild.validateAnswers({
     full_name: 'A Client',
     project_address: '1 Example Dr',
-    inspiration_files: [{ name: 'bath.jpg' }],
+    furnishings_budget: '$90,000',
+    inspiration_files: set20.map(({ name }) => ({ name })),
   })
   assert.equal(res.ok, false)
   assert.deepEqual(res.missing.map((m) => m.id), ['inspiration_files'])
 })
 
-t('all three missing are all three reported, in form order', () => {
+t('all four missing are all four reported, in form order', () => {
   const res = newbuild.validateAnswers({})
-  assert.deepEqual(res.missing.map((m) => m.id), ['full_name', 'project_address', 'inspiration_files'])
+  assert.deepEqual(res.missing.map((m) => m.id), [
+    'full_name',
+    'project_address',
+    'inspiration_files',
+    'furnishings_budget',
+  ])
 })
 
 t('answers from the other form are dropped, not stored', () => {
   const res = newbuild.validateAnswers({
     full_name: 'A',
     project_address: 'B',
-    inspiration_files: [{ name: 'x.jpg', id: 'i1' }],
+    furnishings_budget: '$75,000',
+    inspiration_files: set20,
     guest_count_goal: 12,
     adr_goal: '$400',
   })
@@ -189,7 +228,8 @@ t('multiselect shower features drop anything not on the list', () => {
   const res = newbuild.validateAnswers({
     full_name: 'A',
     project_address: 'B',
-    inspiration_files: [{ name: 'x.jpg', id: 'i1' }],
+    furnishings_budget: '$75,000',
+    inspiration_files: set20,
     shower_features: ['Steam', 'Gold taps everywhere'],
   })
   assert.deepEqual(res.answers.shower_features, ['Steam'])
